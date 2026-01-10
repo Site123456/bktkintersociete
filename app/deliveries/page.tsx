@@ -1,13 +1,77 @@
 import mongoose from "mongoose";
 import connectDB from "@/lib/connectDB";
-import { Delivery } from "@/types/delivery";
-import PDFButton from "@/components/PDFButton";
+import DeliveriesClient from "./DeliveriesClient";
 
 export const dynamic = "force-dynamic";
 
-function shortId(id: string) {
-  return `${id.slice(0, 2)}${id.slice(-4)}`;
+/* -------------------------------------------------------------------------- */
+/*                                   TYPES                                    */
+/* -------------------------------------------------------------------------- */
+
+type SiteSlug =
+  | "BKTK01"
+  | "BKTK02"
+  | "BKTK03"
+  | "BKTK04"
+  | "BKTK05"
+  | "BKTK06"
+  | "BKTK07"
+  | "BKTK08";
+
+type Site = {
+  slug: SiteSlug;
+  name: string;
+  line1: string;
+  line2: string;
+};
+
+type DeliveryItem = {
+  name: string;
+  qty: number;
+  unit: string;
+};
+
+type Delivery = {
+  _id: string;
+  date: string;
+  requestedDeliveryDate: string;
+  signedBy: string;
+  ref: string;
+  site: Site | null;
+  items: DeliveryItem[];
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   HELPERS                                  */
+/* -------------------------------------------------------------------------- */
+
+const FALLBACK_SITES: Site[] = [
+  { slug: "BKTK01", name: "INS Paris 15", line1: "", line2: "" },
+  { slug: "BKTK02", name: "INS Bordeaux", line1: "", line2: "" },
+  { slug: "BKTK03", name: "INS Courbevoie", line1: "", line2: "" },
+  { slug: "BKTK04", name: "INS Saint-Ouen", line1: "", line2: "" },
+  { slug: "BKTK05", name: "INS Bagneux", line1: "", line2: "" },
+  { slug: "BKTK06", name: "INS Ivry", line1: "", line2: "" },
+  { slug: "BKTK07", name: "AFS", line1: "", line2: "" },
+  { slug: "BKTK08", name: "Koseli Buffet", line1: "", line2: "" },
+];
+
+function isSiteSlug(value: string): value is SiteSlug {
+  return [
+    "BKTK01",
+    "BKTK02",
+    "BKTK03",
+    "BKTK04",
+    "BKTK05",
+    "BKTK06",
+    "BKTK07",
+    "BKTK08",
+  ].includes(value as SiteSlug);
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                   DB FETCH                                 */
+/* -------------------------------------------------------------------------- */
 
 async function getDeliveries(): Promise<Delivery[]> {
   await connectDB();
@@ -25,76 +89,29 @@ async function getDeliveries(): Promise<Delivery[]> {
     requestedDeliveryDate: doc.requestedDeliveryDate,
     signedBy: doc.signedBy,
     ref: doc.ref,
-    site: doc.site,
+    site: doc.site ?? null,
     items: doc.items,
   }));
 }
 
-export default async function DeliveriesPage() {
+/* -------------------------------------------------------------------------- */
+/*                                   PAGE                                     */
+/* -------------------------------------------------------------------------- */
+
+export default async function DeliveriesPage(props: {
+  searchParams: Promise<{ site?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const siteParam = searchParams?.site;
+  const selectedSite = siteParam && isSiteSlug(siteParam) ? siteParam : null;
+
   const deliveries = await getDeliveries();
 
   return (
-    <div className="p-10 space-y-10">
-      <h1 className="text-4xl font-semibold tracking-tight">
-        Bon de Livraison
-      </h1>
-
-      <div className="space-y-6">
-        {deliveries.map((d) => (
-          <div
-            key={d._id}
-            className="border border-neutral-200 rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition"
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-medium">
-                  Livraison #{shortId(d._id)}
-                </h2>
-                <p className="text-neutral-500 text-sm">{d.date}</p>
-              </div>
-
-              <PDFButton delivery={d} />
-            </div>
-
-            <div className="mt-4 text-sm text-neutral-700 space-y-1">
-              <p>
-                <strong>Demandé:</strong> {d.requestedDeliveryDate}
-              </p>
-              <p>
-                <strong>Signé par:</strong> {d.signedBy}
-              </p>
-              <p>
-                <strong>Ref:</strong> {d.ref}
-              </p>
-            </div>
-
-            {d.site && (
-              <div className="mt-4 text-sm text-neutral-700 space-y-1">
-                <p>
-                  <strong>Site:</strong> {d.site.name}
-                </p>
-                <p>{d.site.line1}</p>
-                <p>{d.site.line2}</p>
-              </div>
-            )}
-
-            <div className="mt-4">
-              <h3 className="font-medium">Articles</h3>
-              <ul className="list-disc pl-6 text-sm text-neutral-700">
-                {d.items.map((item, i) => (
-                  <li key={i}>
-                    {item.name} — {item.qty} {item.unit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ))}
-
-        {deliveries.length === 0 && (
-          <p className="text-neutral-500">Aucune livraison trouvée.</p>
-        )}
-      </div>
-    </div>
+    <DeliveriesClient
+      deliveries={deliveries}
+      selectedSite={selectedSite}
+      sites={FALLBACK_SITES}
+    />
   );
 }

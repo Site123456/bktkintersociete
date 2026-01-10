@@ -12,6 +12,7 @@ import {
 
 import {
   SignInButton,
+  SignUpButton,
   SignOutButton,
   SignedIn,
   SignedOut,
@@ -66,48 +67,47 @@ const SITE_HEADERS: Record<SiteSlug, {
   name: string;
   line1: string;
   line2: string;
-}> = {
-  BKTK01: {
-    name: "INS Paris 15",
-    line1: "12 RUE DE VAUGIRARD",
-    line2: "75015 PARIS – France",
-  },
-  BKTK02: {
-    name: "INS Bordeaux",
-    line1: "21 RUE SAINTE-CATHERINE",
-    line2: "33000 BORDEAUX – France",
-  },
-  BKTK03: {
-    name: "INS Courbevoie",
-    line1: "8 AVENUE MARCEAU",
-    line2: "92400 COURBEVOIE – France",
-  },
-  BKTK04: {
-    name: "INS Saint-Ouen",
-    line1: "14 RUE DES ROSIERS",
-    line2: "93400 SAINT-OUEN – France",
-  },
-  BKTK05: {
-    name: "INS Bagneux",
-    line1: "05 ALLÉE DU PARC DE GARLANDE",
-    line2: "92220 BAGNEUX – France",
-  },
-  BKTK06: {
-    name: "INS Ivry",
-    line1: "3 RUE MAURICE GUNSBOURG",
-    line2: "94200 IVRY-SUR-SEINE – France",
-  },
-  BKTK07: {
-    name: "AFS",
-    line1: "10 RUE DU COMMERCE",
-    line2: "75015 PARIS – France",
-  },
-  BKTK08: {
-    name: "Koseli Buffet",
-    line1: "7 RUE DE BELLEVILLE",
-    line2: "75020 PARIS – France",
-  },
-};
+}> = {BKTK01: {
+  name: "INDIAN NEPALI SWAD PARIS",
+  line1: "4 rue Bargue",
+  line2: "75015 Paris, France",
+},
+BKTK02: {
+  name: "INDIAN NEPALI SWAD Bordeaux",
+  line1: "21 rue Sainte-Catherine",
+  line2: "33000 Bordeaux, France",
+},
+BKTK03: {
+  name: "INDIAN NEPALI SWAD Courbevoie",
+  line1: "8 avenue Marceau",
+  line2: "92400 Courbevoie, France",
+},
+BKTK04: {
+  name: "INDIAN NEPALI SWAD Saint-Ouen",
+  line1: "14 rue des Rosiers",
+  line2: "93400 Saint-Ouen-sur-Seine, France",
+},
+BKTK05: {
+  name: "INDIAN NEPALI SWAD Bagneux",
+  line1: "5 allée du Parc de la Garenne",
+  line2: "92220 Bagneux, France",
+},
+BKTK06: {
+  name: "INDIAN NEPALI SWAD Ivry",
+  line1: "3 rue Maurice Gunsbourg",
+  line2: "94200 Ivry-sur-Seine, France",
+},
+BKTK07: {
+  name: "ASIAN FOOD STATION",
+  line1: "51 Avenue Paul Vaillant Couturier",
+  line2: "93120 La Courneuve",
+},
+BKTK08: {
+  name: "KOSELI BUFFET",
+  line1: "197 Avenue Paul Vaillant Couturier",
+  line2: "93120 La Courneuve, France",
+}
+}
 function AppLoader() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -487,7 +487,7 @@ export function CreerDevis() {
               sm:max-w-lg sm:left-0
             "
           >
-            {filtered.length > 0 ? (
+            {filtered.length > 0 && (
               filtered.map((p, i) => (
                 <li
                   key={i}
@@ -505,25 +505,24 @@ export function CreerDevis() {
                   </span>
                 </li>
               ))
-            ) : (
-              <li
-                onClick={() => addNewProduct(search)}
-                className="
-                  px-3 py-2 cursor-pointer
-                  hover:bg-muted transition
-                  font-medium text-primary text-sm
-                "
-              >
-                Ajouter “{search}”
-              </li>
             )}
+            <li
+              onClick={() => addNewProduct(search)}
+              className="
+                px-3 py-2 cursor-pointer
+                hover:bg-muted transition
+                font-medium text-primary text-sm
+              "
+            >
+              Ajouter “{search}”
+            </li>
           </ul>
         )}
       </div>
 
 
       <section>
-        {lines.map((l, i) => (
+        {lines.map((l) => (
           <div
             key={l.id}
             draggable
@@ -741,41 +740,67 @@ export default function HomePage() {
                 </span>
               </div>
             </SignedOut>
-
             <SignedIn>
-              <UserAvatar />
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-semibold tracking-tight">
-                  BKTK INTL.
-                </span>
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <UserAvatar/>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="text-xs text-muted-foreground hover:text-foreground transition">
-                      {selectedSite
-                        ? selectedSite.name
-                        : loadingSites
-                        ? "Chargement…"
-                        : "Choisir un site ▾"}
-                    </button>
-                  </DropdownMenuTrigger>
+                {/* Name + Site Selector */}
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm font-semibold tracking-tight">
+                    BKTK INTL.
+                  </span>
 
-                  {!loadingSites && (
-                    <DropdownMenuContent className="w-48 backdrop-blur-md bg-popover/90 p-1">
-                      {sites.map((site) => (
-                        <button
-                          key={site.slug}
-                          onClick={() => selectSite(site)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 rounded-md"
-                        >
-                          {site.name}
-                        </button>
-                      ))}
-                    </DropdownMenuContent>
-                  )}
-                </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="
+                          text-xs text-muted-foreground 
+                          hover:text-foreground transition
+                          flex items-center gap-1
+                        "
+                      >
+                        {selectedSite
+                          ? selectedSite.name
+                          : loadingSites
+                          ? "Chargement…"
+                          : "Choisir un site"}
+                        <span className="opacity-70">▾</span>
+                      </button>
+                    </DropdownMenuTrigger>
+
+                    {!loadingSites && (
+                      <DropdownMenuContent
+                        className="
+                          w-52 p-1 rounded-xl shadow-xl
+                          backdrop-blur-md bg-popover/90
+                          border border-border/50
+                          animate-in fade-in slide-in-from-top-1
+                        "
+                      >
+                        {sites.map((site) => (
+                          <button
+                            key={site.slug}
+                            onClick={() => selectSite(site)}
+                            className="
+                              w-full text-left px-3 py-2 text-sm
+                              hover:bg-accent/50 rounded-md
+                              transition flex items-center justify-between
+                            "
+                          >
+                            <span>{site.name}</span>
+                            {selectedSite?.slug === site.slug && (
+                              <span className="text-primary text-xs">●</span>
+                            )}
+                          </button>
+                        ))}
+                      </DropdownMenuContent>
+                    )}
+                  </DropdownMenu>
+                </div>
               </div>
             </SignedIn>
+
           </div>
 
           {/* RIGHT SIDE */}
@@ -786,6 +811,11 @@ export default function HomePage() {
                   Sign in
                 </Button>
               </SignInButton>
+              <SignUpButton mode="modal">
+                <Button variant="outline" size="sm" className="text-xs">
+                  Get Started
+                </Button>
+              </SignUpButton>
             </SignedOut>
 
             <SignedIn>
@@ -800,11 +830,6 @@ export default function HomePage() {
       </header>
     );
   }
-
-  // --------------------------------------------------
-  //  DASHBOARD
-  // --------------------------------------------------
-
   function Dashboard() {
     if (!user) {
       return (
