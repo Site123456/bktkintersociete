@@ -578,6 +578,7 @@ export function CreerDevis() {
                     text-base font-semibold bg-transparent 
                     border-none focus:ring-0 focus:outline-none
                     w-full placeholder:text-muted-foreground
+                    pe-7
                   "
                   placeholder="Nom du produit"
                 />
