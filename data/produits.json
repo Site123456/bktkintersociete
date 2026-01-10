@@ -1,44 +1,58 @@
 [
   { "uniquename": "AJINOMOTO", "typedequantite": "1 pcs = unité" },
   { "uniquename": "AJWAIN SEEDS", "typedequantite": "1 pcs = 1KG" },
+
   { "uniquename": "ALLUMINIUM FOIL LONG 44CM", "typedequantite": "1 pcs = rouleau" },
   { "uniquename": "ALLUMINIUM FOIL SHORT 30CM", "typedequantite": "1 pcs = rouleau" },
+
   { "uniquename": "ATTA", "typedequantite": "1 pcs = 10KG" },
   { "uniquename": "ATTA", "typedequantite": "1 pcs = 5KG" },
+
   { "uniquename": "AUBERGINE", "typedequantite": "1 pcs = carton" },
   { "uniquename": "BADAM CHHILKA", "typedequantite": "1 pcs = 700G" },
   { "uniquename": "BADAM POWDER", "typedequantite": "1 pcs = 800G" },
   { "uniquename": "BAKING POWDER", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "BANDA CHOUX BLANC", "typedequantite": "1 pcs = pièce" },
+
   { "uniquename": "BESAN GRAM FLOUR", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "BLACK CHANA", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "BLACK PEPPER POWDER", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "BLACK PEPPER WHOLE", "typedequantite": "1 pcs = 1KG" },
 
-  { "uniquename": "BOISSON COCA NORMAL SLIM", "typedequantite": "1 pcs = 33CL (24 bouteilles)" },
-  { "uniquename": "BOISSON COCA ZERO SLIM", "typedequantite": "1 pcs = 33CL (24 bouteilles)" },
-  { "uniquename": "BOISSON FANTA ORANGE SLIM", "typedequantite": "1 pcs = 33CL (24 bouteilles)" },
-  { "uniquename": "BOISSON ICE TEA", "typedequantite": "1 pcs = 33CL (24 bouteilles)" },
-  { "uniquename": "BOISSON PERRIER SLIM", "typedequantite": "1 pcs = 33CL (24 bouteilles)" },
+  { "uniquename": "BOISSON COCA NORMAL SLIM", "typedequantite": "1 pcs = 33CL (24 pcs)" },
+  { "uniquename": "BOISSON COCA ZERO SLIM", "typedequantite": "1 pcs = 33CL (24 pcs)" },
+  { "uniquename": "BOISSON FANTA ORANGE SLIM", "typedequantite": "1 pcs = 33CL (24 pcs)" },
+  { "uniquename": "BOISSON ICE TEA", "typedequantite": "1 pcs = 33CL (24 pcs)" },
+  { "uniquename": "BOISSON PERRIER SLIM", "typedequantite": "1 pcs = 33CL (24 pcs)" },
 
   { "uniquename": "BUTTER", "typedequantite": "1 carton = 500G x 20 pcs" },
   { "uniquename": "CAJU CASSE", "typedequantite": "1 pcs = 22.68KG" },
   { "uniquename": "CARDAMON GREEN", "typedequantite": "1 pcs = 750G" },
   { "uniquename": "CAROTTE", "typedequantite": "1 pcs = KG" },
-  { "uniquename": "CITRON JUICE", "typedequantite": "1 pcs = 5L" },
 
   { "uniquename": "CHAUMIN NOODLES", "typedequantite": "1 carton = 6 x 2KG" },
   { "uniquename": "CHILLI POWDER", "typedequantite": "1 pcs = 1KG" },
+  { "uniquename": "CITRON JAUNE", "typedequantite": "1 pcs = carton" },
+  { "uniquename": "CITRON SYROPE", "typedequantite": "1 pcs = 5L" },
   { "uniquename": "CLOVES GIROFLE", "typedequantite": "1 pcs = 1KG" },
+
   { "uniquename": "COCO POWDER", "typedequantite": "1 pcs = 750G" },
+  { "uniquename": "COLOUR GREEN", "typedequantite": "1 pcs = 500G" },
+  { "uniquename": "COLOUR ORANGE", "typedequantite": "1 pcs = 500G" },
+  { "uniquename": "COLOUR RED", "typedequantite": "1 pcs = 500G" },
+  { "uniquename": "COLOUR YELLOW", "typedequantite": "1 pcs = 500G" },
+
+  { "uniquename": "CONCOMBRE", "typedequantite": "1 pcs = pièce" },
 
   { "uniquename": "CONGELE CREVETTE 31/40", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "CONGELE MIX LEGUME", "typedequantite": "1 pcs = 2.5KG" },
   { "uniquename": "CONGELE PALAK EPINARDS", "typedequantite": "1 pcs = 2.5KG" },
   { "uniquename": "CONGELE PETITS POIS EXTRA FINS", "typedequantite": "1 pcs = 2.5KG" },
+  { "uniquename": "CONGELE SAMOSA CHICKEN", "typedequantite": "1 carton = 50 pcs x 6" },
+  { "uniquename": "CONGELE SAMOSA VEG", "typedequantite": "1 carton = 50 pcs x 6" },
 
   { "uniquename": "CREME LIQUIDE", "typedequantite": "1 pack = 6L" },
-  { "uniquename": "CUISSE DE POULET HALAL", "typedequantite": "1 pcs = 10KG" },
+
   { "uniquename": "DAL BLACK", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "DAL CHANA", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "DAL MASOOR", "typedequantite": "1 pcs = 1KG" },
@@ -49,9 +63,10 @@
 
   { "uniquename": "FARINE T-55", "typedequantite": "1 pack = 1KG x 10" },
   { "uniquename": "FENNEL SEEDS", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "FILET BLANC DE POULET HALAL", "typedequantite": "1 pcs = 10KG" },
 
   { "uniquename": "FRIED ONIONS", "typedequantite": "1 carton = 2.5KG x 12" },
+  { "uniquename": "FROMAGE", "typedequantite": "1 carton = 400G x 24 pcs" },
+
   { "uniquename": "GARAM MASALA", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "GARLIC AIL PELER", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "GINGEMBRE", "typedequantite": "1 pcs = KG" },
@@ -61,7 +76,14 @@
 
   { "uniquename": "JEERA POWDER", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "JEERA WHOLE", "typedequantite": "1 pcs = 1KG" },
+
   { "uniquename": "KETCHUP TOMATO", "typedequantite": "1 pcs = 5KG" },
+  { "uniquename": "KISMIS RAISIN GOLDEN", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "LIQUIDE VAISSELLE", "typedequantite": "1 pcs = 10L" },
+
+  { "uniquename": "MEAT CUISSE DE POULET HALAL", "typedequantite": "1 pcs = 10KG" },
+  { "uniquename": "MEAT FILET DE POULET HALAL", "typedequantite": "1 pcs = 10KG" },
 
   { "uniquename": "MILK BLUE", "typedequantite": "1 pack = 6L" },
   { "uniquename": "MILK RED", "typedequantite": "1 pack = 6L" },
@@ -70,13 +92,18 @@
   { "uniquename": "OIL", "typedequantite": "1 pcs = 25L" },
 
   { "uniquename": "ONION FRESH", "typedequantite": "1 pcs = 5KG" },
-  { "uniquename": "PAPRIKA", "typedequantite": "1 pcs = 1KG" },
+  { "uniquename": "POTATO", "typedequantite": "1 pcs = KG" },
 
   { "uniquename": "RICE", "typedequantite": "1 pcs = 20KG" },
-  { "uniquename": "SALT SEL FIN", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "SUGAR", "typedequantite": "1 pcs = 25KG" },
+  { "uniquename": "ROSE SYROP", "typedequantite": "1 pcs = 750ML" },
 
+  { "uniquename": "SALT SEL FIN", "typedequantite": "1 pcs = 1KG" },
+  { "uniquename": "SOYA SAUCE DARK", "typedequantite": "1 pcs = bouteille" },
+  { "uniquename": "SOYA SAUCE LIGHT", "typedequantite": "1 pcs = bouteille" },
+
+  { "uniquename": "SUGAR", "typedequantite": "1 pcs = 25KG" },
   { "uniquename": "SUJI", "typedequantite": "1 pcs = 5KG" },
+
   { "uniquename": "VINAIGRE CRISTAL", "typedequantite": "1 pcs = 1L" },
   { "uniquename": "YAOURT NATURE", "typedequantite": "1 carton = 3 x (16 x 125G)" }
 ]
