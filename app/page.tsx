@@ -1,19 +1,21 @@
 "use client";
-
 import { useEffect, useState, useMemo } from "react";
 import { useTheme } from "next-themes";
+import Link from 'next/link';
 
 import {
   Moon,
   Sun,
   Building2,
+  GripVertical
 } from "lucide-react";
 
 import {
   SignInButton,
+  SignOutButton,
   SignedIn,
   SignedOut,
-  UserButton,
+  UserAvatar,
   ClerkLoaded,
   ClerkLoading,
   useUser,
@@ -191,6 +193,28 @@ const today = () => {
   d.setDate(d.getDate())
   return d.toISOString().split("T")[0]
 }
+interface DeliveryPayload {
+  date: string;
+  requestedDeliveryDate: string;
+  signedBy: string;
+  ref: string;
+  site: string;
+  items: Array<{
+    name: string;
+    unit: string;
+    qty: number;
+  }>;
+}
+const createId = () =>
+  `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+async function SendToBackDB(payload: DeliveryPayload) {
+  await fetch("/routedb/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
 function getSiteHeader(slug: string | undefined | null) {
   if (!slug) return null;
   if (slug in SITE_HEADERS) {
@@ -215,30 +239,90 @@ export function CreerDevis() {
       p.uniquename.toLowerCase().includes(q)
     )
   }, [search])
-
   const addProduct = (p: Produit) => {
-    setLines(l => [
-      ...l,
-      { id: `${Date.now()}`, name: p.uniquename, qty: 1, unit: p.typedequantite }
-    ])
-    setSearch("")
-    setShowDropdown(false)
-  }
+    setLines(prev => [
+      ...prev,
+      {
+        id: createId(),
+        name: p.uniquename,
+        qty: 1,
+        unit: p.typedequantite ?? ""
+      }
+    ]);
+
+    setSearch("");
+    setShowDropdown(false);
+  };
+
 
   const addNewProduct = (name: string) => {
-    setLines(l => [
-      ...l,
-      { id: `${Date.now()}`, name, qty: 1, unit: "" }
-    ])
-    setSearch("")
-    setShowDropdown(false)
-  }
+    setLines(prev => [
+      ...prev,
+      {
+        id: createId(),
+        name,
+        qty: 1,
+        unit: ""
+      }
+    ]);
 
-  const updateQty = (id: string, qty: number) =>
-    setLines(l => l.map(i => i.id === id ? { ...i, qty: Math.max(0, qty) } : i))
+    setSearch("");
+    setShowDropdown(false);
+  };
 
-  const removeLine = (id: string) =>
-    setLines(l => l.filter(i => i.id !== id))
+
+  const updateQty = (id: string, qty: number) => {
+    setLines(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, qty: Math.max(0, qty) } : item
+      )
+    );
+  };
+
+
+  const removeLine = (id: string) => {
+    setLines(prev => prev.filter(item => item.id !== id));
+  };
+
+
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    id: string
+  ) => {
+    e.dataTransfer.setData("text/plain", id);
+  };
+
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+
+  const handleDrop = (
+    e: React.DragEvent<HTMLDivElement>,
+    targetId: string
+  ) => {
+    e.preventDefault();
+
+    const draggedId = e.dataTransfer.getData("text/plain");
+    if (!draggedId || draggedId === targetId) return;
+
+    setLines(prev => {
+      const newOrder = [...prev];
+
+      const draggedIndex = newOrder.findIndex(i => i.id === draggedId);
+      const targetIndex = newOrder.findIndex(i => i.id === targetId);
+
+      if (draggedIndex === -1 || targetIndex === -1) return prev;
+
+      const [moved] = newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, moved);
+
+      return newOrder;
+    });
+  };
+
+
 
   const generatePDF = () => {
     if (!user) return <AppLoader />
@@ -274,9 +358,25 @@ export function CreerDevis() {
     // Client
     y = 46
     pdf.setFontSize(10)
-    pdf.text("Pour le site :", 14, y)
+    pdf.text("Pour le site :", 14, y);
     const selected = localStorage.getItem(`selected-site-${user.id}`);
     const site = selected ? JSON.parse(selected) : null;
+    const payload: DeliveryPayload = {
+      date: today(),
+      requestedDeliveryDate: date,
+      signedBy: user.primaryEmailAddress?.emailAddress ?? "",
+      ref: user.id.replace(/^user_/, ""),
+
+      // ONLY this part comes from localStorage
+      site: site,
+
+      // Everything else stays as-is
+      items: lines.map(l => ({
+        name: l.name,
+        unit: l.unit,
+        qty: l.qty,
+      })),
+    };
 
     const header = site ? getSiteHeader(site.slug) : null;
 
@@ -322,119 +422,251 @@ export function CreerDevis() {
     pdf.setLineWidth(0.1);
     pdf.roundedRect(10, 10, 190, 60, 4, 4); 
 
-
-    pdf.save("bon-de-livraison.pdf")
+    
+    SendToBackDB(payload);
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
   }
 
   return (
-    <main className="min-h-screen p-6 bg-background text-foreground space-y-6">
+    <main className="min-h-screen py-6 bg-background text-foreground space-y-6">
+      {/* DATE PICKER */}
+      <div className="mb-4 w-full">
+        <label className="text-sm font-medium text-muted-foreground mb-1 block">
+          Date de livraison
+        </label>
 
-      <div className="flex items-center gap-2 mb-4">
         <input
           type="date"
           value={date}
           min={tomorrow()}
           onChange={e => setDate(e.target.value)}
-          className="border rounded-lg px-2 py-1"
+          className="
+            w-full px-3 py-2 rounded-lg border bg-background
+            focus:ring-2 focus:ring-primary/40 focus:outline-none
+            transition text-sm
+            sm:max-w-xs
+          "
         />
       </div>
 
-      {/* SEARCH / ADD */}
-      <div className="relative">
-        <SearchIcon className="absolute left-3 top-2.5 text-muted-foreground" size={16} />
-        <input
-          type="text"
-          value={search}
-          onChange={e => {
-            setSearch(e.target.value)
-            setShowDropdown(true)
-          }}
-          onFocus={() => setShowDropdown(true)}
-          onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-          placeholder="Rechercher ou ajouter un produit"
-          className="w-full pl-9 pr-3 py-2 border rounded-lg"
-        />
+      {/* SEARCH / ADD PRODUCT */}
+      <div className="relative w-full">
+        <div className="relative">
+          <SearchIcon
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={16}
+          />
+
+          <input
+            type="text"
+            value={search}
+            onChange={e => {
+              setSearch(e.target.value)
+              setShowDropdown(true)
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            placeholder="Rechercher ou ajouter un produit"
+            className="
+              w-full pl-9 pr-3 py-2 rounded-lg border bg-background
+              focus:ring-2 focus:ring-primary/40 focus:outline-none
+              transition text-sm
+            "
+          />
+        </div>
+
         {showDropdown && search.length > 0 && (
-          <ul className="absolute z-20 w-full bg-card border rounded-lg max-h-52 overflow-auto mt-1 shadow-lg">
-            {filtered.length ? filtered.map((p, i) => (
-              <li
-                key={i}
-                onClick={() => addProduct(p)}
-                className="p-2 hover:bg-muted cursor-pointer"
-              >
-                {p.uniquename} ({p.typedequantite})
-              </li>
-            )) : (
+          <ul
+            className="
+              absolute z-20 w-full mt-2
+              bg-card border rounded-xl shadow-xl
+              max-h-60 overflow-auto
+              animate-in fade-in slide-in-from-top-1
+              sm:max-w-lg sm:left-0
+            "
+          >
+            {filtered.length > 0 ? (
+              filtered.map((p, i) => (
+                <li
+                  key={i}
+                  onClick={() => addProduct(p)}
+                  className="
+                    px-3 py-2 cursor-pointer
+                    hover:bg-muted transition
+                    flex justify-between items-center
+                    text-sm
+                  "
+                >
+                  <span className="font-medium">{p.uniquename}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {p.typedequantite}
+                  </span>
+                </li>
+              ))
+            ) : (
               <li
                 onClick={() => addNewProduct(search)}
-                className="p-2 hover:bg-muted cursor-pointer font-medium text-blue-600"
+                className="
+                  px-3 py-2 cursor-pointer
+                  hover:bg-muted transition
+                  font-medium text-primary text-sm
+                "
               >
-                Ajouter &quot;{search}&quot;
+                Ajouter “{search}”
               </li>
             )}
           </ul>
         )}
       </div>
 
-      {/* TABLE ONLY */}
-      <section className="border rounded-xl bg-card overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted-foreground/20">
-            <tr>
-              <th className="p-2 text-left">#</th>
-              <th className="p-2 text-left">Produit</th>
-              <th className="p-2 text-left">Quantité</th>
-              <th className="p-2 text-left">Unit</th>
-              <th className="p-2">Supprimer</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l, i) => (
-              <tr key={l.id} className="border-t">
-                <td className="p-2">{i + 1}</td>
-                <td className="p-2">{l.name}</td>
-                <td className="p-2">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => updateQty(l.id, l.qty - 1)}
-                      className="p-1 border rounded"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <input
-                      type="number"
-                      min={0}
-                      value={l.qty}
-                      onChange={e => updateQty(l.id, Number(e.target.value))}
-                      className="w-16 text-center border rounded py-1"
-                    />
-                    <button
-                      onClick={() => updateQty(l.id, l.qty + 1)}
-                      className="p-1 border rounded"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </td>
-                <td className="p-2">{l.unit}</td>
-                <td className="p-2 text-center">
-                  <button onClick={() => removeLine(l.id)} className="text-red-500">
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <section>
+        {lines.map((l, i) => (
+          <div
+            key={l.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, l.id)}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, l.id)}
+            className="
+              relative group
+              border rounded-xl bg-card p-4 shadow-sm 
+              flex flex-col gap-5
+              sm:flex-row sm:items-center sm:justify-between
+              transition-all hover:shadow-md hover:border-primary/30
+            "
+          >
+            {/* MOBILE: Trash button top-right */}
+            <button
+              onClick={() => removeLine(l.id)}
+              className="
+                absolute top-3 right-3 sm:hidden
+                text-red-500 hover:text-red-600 
+                transition p-2 rounded-lg hover:bg-red-50
+              "
+            >
+              <Trash2 size={18} />
+            </button>
+
+            {/* LEFT — Drag handle + Editable product info */}
+            <div className="flex items-start gap-4 flex-1">
+              {/* Drag handle */}
+              <div
+                className="
+                  cursor-grab active:cursor-grabbing
+                  text-muted-foreground hover:text-primary transition
+                  flex items-center pt-1
+                "
+              >
+                <GripVertical size={20} />
+              </div>
+
+              {/* Editable fields */}
+              <div className="flex flex-col gap-1 w-full">
+                {/* Name */}
+                <input
+                  value={l.name}
+                  onChange={(e) =>
+                    setLines(prev =>
+                      prev.map(item =>
+                        item.id === l.id ? { ...item, name: e.target.value } : item
+                      )
+                    )
+                  }
+                  className="
+                    text-base font-semibold bg-transparent 
+                    border-none focus:ring-0 focus:outline-none
+                    w-full placeholder:text-muted-foreground
+                  "
+                  placeholder="Nom du produit"
+                />
+
+                {/* Unit / description */}
+                <input
+                  value={l.unit}
+                  placeholder="Description / unité"
+                  onChange={(e) =>
+                    setLines(prev =>
+                      prev.map(item =>
+                        item.id === l.id ? { ...item, unit: e.target.value } : item
+                      )
+                    )
+                  }
+                  className="
+                    text-sm text-muted-foreground bg-transparent 
+                    border-none focus:ring-0 focus:outline-none
+                    w-full placeholder:text-muted-foreground
+                  "
+                />
+              </div>
+            </div>
+
+            {/* MIDDLE — Quantity controls */}
+            <div
+              className="
+                flex items-center gap-3 w-full
+                sm:w-auto sm:justify-end
+              "
+            >
+              <button
+                onClick={() => updateQty(l.id, l.qty - 1)}
+                className="
+                  p-2 rounded-lg border bg-background 
+                  hover:bg-muted active:scale-95 
+                  transition flex items-center justify-center
+                "
+              >
+                <Minus size={16} />
+              </button>
+
+              <input
+                type="number"
+                min={0}
+                value={l.qty}
+                onChange={(e) => updateQty(l.id, Number(e.target.value))}
+                className="
+                  flex-1 text-center border rounded-lg py-2 
+                  bg-background font-medium text-base
+                  focus:ring-2 focus:ring-primary/40 focus:outline-none
+                  sm:flex-none sm:w-20
+                "
+              />
+
+              <button
+                onClick={() => updateQty(l.id, l.qty + 1)}
+                className="
+                  p-2 rounded-lg border bg-background 
+                  hover:bg-muted active:scale-95 
+                  transition flex items-center justify-center
+                "
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+
+            {/* DESKTOP: Trash button */}
+            <button
+              onClick={() => removeLine(l.id)}
+              className="
+                hidden sm:block
+                text-red-500 hover:text-red-600 
+                transition p-2 rounded-lg hover:bg-red-50
+              "
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        ))}
       </section>
 
-      {/* ACTION */}
       <button
         onClick={generatePDF}
         disabled={!lines.length}
         className="w-full h-12 rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
       >
-        Générer le PDF
+        Envoyer le devis
       </button>
     </main>
   )
@@ -443,24 +675,24 @@ export function CreerDevis() {
 export default function HomePage() {
   const { user } = useUser();
 
-  const [sites, setSites] = useState<Site[]>(FALLBACK_SITES);
+  const [sites] = useState<Site[]>(FALLBACK_SITES);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [loadingSites, setLoadingSites] = useState(true);
 
   useEffect(() => {
     async function loadSites() {
       try {
-        const res = await fetch("/api/sites");
+        const res = await fetch("/routedb/");
         if (!res.ok) throw new Error("Failed to fetch sites");
 
         const data: Site[] = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setSites(data);
+          console.log(data);
         } else {
-          setSites(FALLBACK_SITES);
+          console.log(FALLBACK_SITES);
         }
       } catch {
-        setSites(FALLBACK_SITES);
+        console.log(FALLBACK_SITES);
       } finally {
         setLoadingSites(false);
       }
@@ -497,9 +729,9 @@ export default function HomePage() {
 
           {/* LEFT SIDE */}
           <div className="flex items-center gap-3">
-            <div className="h-7 w-7 rounded-xl bg-linear-to-tr from-primary/80 to-primary/40 shadow-sm" />
 
             <SignedOut>
+              <div className="h-7 w-7 rounded-xl bg-linear-to-tr from-primary/80 to-primary/40 shadow-sm" />
               <div className="flex flex-col leading-tight">
                 <span className="text-sm font-semibold tracking-tight">
                   BKTK INTL.
@@ -511,6 +743,7 @@ export default function HomePage() {
             </SignedOut>
 
             <SignedIn>
+              <UserAvatar />
               <div className="flex flex-col leading-tight">
                 <span className="text-sm font-semibold tracking-tight">
                   BKTK INTL.
@@ -556,10 +789,9 @@ export default function HomePage() {
             </SignedOut>
 
             <SignedIn>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{ elements: { avatarBox: "h-8 w-8" } }}
-              />
+              <SignOutButton>
+                <Button>Sign Out</Button>
+              </SignOutButton>
             </SignedIn>
 
             <ModeToggle />
@@ -637,10 +869,22 @@ export default function HomePage() {
 
     return (
       <div className="p-6 w-full">
-        <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-primary" />
-          {selectedSite.name}
-        </h1>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              {selectedSite.name}
+            </h1>
+          </div>
+
+          <Link
+            href={`/deliveries?site=${selectedSite.slug}`}
+            className="text-sm font-medium text-primary hover:text-primary/80 transition"
+          >
+            See next deliveries →
+          </Link>
+        </div>
+
         <CreerDevis />
       </div>
     );

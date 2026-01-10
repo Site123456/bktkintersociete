@@ -48,6 +48,7 @@
     "jspdf": "^4.0.0",
     "lucide-react": "^0.562.0",
     "mongodb": "^7.0.0",
+    "mongoose": "^9.1.2",
     "next": "16.1.1",
     "next-themes": "^0.4.6",
     "react": "19.2.3",

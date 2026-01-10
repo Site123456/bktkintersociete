@@ -1,6 +1,7 @@
 dependencies: 
-npx shadcn@latest init;
+npx shadcn@latest init --defaults --skip-install --yes;
 npx shadcn@latest add --all;
+
 npm install
  next-themes
  @clerk/nextjs
@@ -9,3 +10,4 @@ npm install
  next-themes
  lucide-react
  jspdf
+ mongoose
