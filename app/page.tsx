@@ -430,7 +430,7 @@ export function CreerDevis() {
   }
 
   return (
-    <main className="min-h-screen py-6 bg-background text-foreground space-y-6">
+    <main className="py-6 bg-background text-foreground space-y-6">
       {/* DATE PICKER */}
       <div className="mb-4 w-full">
         <label className="text-sm font-medium text-muted-foreground mb-1 block">
@@ -532,7 +532,7 @@ export function CreerDevis() {
             className="
               relative group
               border rounded-xl bg-card p-4 shadow-sm 
-              flex flex-col gap-5
+              flex flex-col gap-5 mb-3
               sm:flex-row sm:items-center sm:justify-between
               transition-all hover:shadow-md hover:border-primary/30
             "
@@ -659,12 +659,21 @@ export function CreerDevis() {
             </button>
           </div>
         ))}
+        {lines.length === 0 && (
+          <div className="w-full flex flex-col items-center justify-center py-10 text-center">
+            <p className="opacity-50 text-sm leading-relaxed">
+              Rechercher un produit pour ajouter<br />
+              Search products to add new
+            </p>
+          </div>
+        )}
+
       </section>
 
       <button
         onClick={generatePDF}
         disabled={!lines.length}
-        className="w-full h-12 rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
+        className="fixed inset-x-0 bottom-4 mx-6 h-12 rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
       >
         Envoyer le devis
       </button>
