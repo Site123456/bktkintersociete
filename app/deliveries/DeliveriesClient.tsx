@@ -78,7 +78,7 @@ export default function DeliveriesClient({
 
   /* AUTH CHECK -------------------------------------------------------- */
   useEffect(() => {
-    if (isLoaded && !user) router.push("/sign-in");
+    if (isLoaded && !user) router.push("/");
   }, [isLoaded, user, router]);
 
   /* CLIENT FILTER ----------------------------------------------------- */
