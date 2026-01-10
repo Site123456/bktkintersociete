@@ -10,27 +10,27 @@ export const SITE_HEADERS: Record<
 },
 BKTK02: {
   name: "INDIAN NEPALI SWAD Bordeaux",
-  line1: "21 rue Sainte-Catherine",
+  line1: "170 Cours du Médoc",
   line2: "33000 Bordeaux, France",
 },
 BKTK03: {
   name: "INDIAN NEPALI SWAD Courbevoie",
-  line1: "8 avenue Marceau",
+  line1: "13 Rue Latérale",
   line2: "92400 Courbevoie, France",
 },
 BKTK04: {
   name: "INDIAN NEPALI SWAD Saint-Ouen",
-  line1: "14 rue des Rosiers",
-  line2: "93400 Saint-Ouen-sur-Seine, France",
+  line1: "12 Rue Palouzie",
+  line2: "93400 Saint-Ouen, France",
 },
 BKTK05: {
   name: "INDIAN NEPALI SWAD Bagneux",
-  line1: "5 allée du Parc de la Garenne",
+  line1: "5 Allée du Parc de Garlande",
   line2: "92220 Bagneux, France",
 },
 BKTK06: {
   name: "INDIAN NEPALI SWAD Ivry",
-  line1: "3 rue Maurice Gunsbourg",
+  line1: "11 Rue Moïse",
   line2: "94200 Ivry-sur-Seine, France",
 },
 BKTK07: {
