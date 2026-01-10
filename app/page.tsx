@@ -446,7 +446,6 @@ export function CreerDevis() {
             w-full px-3 py-2 rounded-lg border bg-background
             focus:ring-2 focus:ring-primary/40 focus:outline-none
             transition text-sm
-            sm:max-w-xs
           "
         />
       </div>
