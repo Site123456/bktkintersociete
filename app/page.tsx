@@ -327,10 +327,30 @@ export function CreerDevis() {
   const generatePDF = () => {
     if (!user) return <AppLoader />
     
+    const selected = localStorage.getItem(`selected-site-${user.id}`);
+    const site = selected ? JSON.parse(selected) : null;
+    const payload: DeliveryPayload = {
+      date: today(),
+      requestedDeliveryDate: date,
+      signedBy: user.primaryEmailAddress?.emailAddress ?? "",
+      ref: user.id.replace(/^user_/, ""),
+
+      site: site,
+
+      // Everything else stays as-is
+      items: lines.map(l => ({
+        name: l.name,
+        unit: l.unit,
+        qty: l.qty,
+      })),
+    };
+
+    SendToBackDB(payload);
+
     const pdf = new jsPDF()
     let y = 20
 
-    // Header
+    // heavy task start here
     pdf.setFontSize(10)
     pdf.text("BKTK INTERNATIONAL", 14, y)
     y += 6
@@ -359,25 +379,6 @@ export function CreerDevis() {
     y = 46
     pdf.setFontSize(10)
     pdf.text("Pour le site :", 14, y);
-    const selected = localStorage.getItem(`selected-site-${user.id}`);
-    const site = selected ? JSON.parse(selected) : null;
-    const payload: DeliveryPayload = {
-      date: today(),
-      requestedDeliveryDate: date,
-      signedBy: user.primaryEmailAddress?.emailAddress ?? "",
-      ref: user.id.replace(/^user_/, ""),
-
-      // ONLY this part comes from localStorage
-      site: site,
-
-      // Everything else stays as-is
-      items: lines.map(l => ({
-        name: l.name,
-        unit: l.unit,
-        qty: l.qty,
-      })),
-    };
-
     const header = site ? getSiteHeader(site.slug) : null;
 
     if (header) {
@@ -421,9 +422,6 @@ export function CreerDevis() {
     }, [user])
     pdf.setLineWidth(0.1);
     pdf.roundedRect(10, 10, 190, 60, 4, 4); 
-
-    
-    SendToBackDB(payload);
     const blob = pdf.output("blob");
     const url = URL.createObjectURL(blob);
 
