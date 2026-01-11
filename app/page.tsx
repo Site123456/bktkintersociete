@@ -208,21 +208,21 @@ interface DeliveryPayload {
 const createId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-async function SendToBackDB(payload: DeliveryPayload) {
-  await fetch("/routedb/", {
+async function SendToBackDB(
+  payload: DeliveryPayload,
+  onSuccess: (id: string) => void
+) {
+  const res = await fetch("/routedb/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-}
-function getSiteHeader(slug: string | undefined | null) {
-  if (!slug) return null;
-  if (slug in SITE_HEADERS) {
-    return SITE_HEADERS[slug as SiteSlug];
-  }
-  return null;
-}
 
+  if (!res.ok) throw new Error("Failed to save delivery");
+
+  const data = await res.json();
+  onSuccess(data.id);
+}
 /* ---------------- PAGE ---------------- */
 export function CreerDevis() {
 
@@ -344,99 +344,12 @@ export function CreerDevis() {
         qty: l.qty,
       })),
     };
+    SendToBackDB(payload, (id) => {
+      setTimeout(() => {
+        window.open(`/pdf?id=${id}`, "_blank");
+      }, 1500);
+    });
 
-    SendToBackDB(payload);
-
-    const pdf = new jsPDF()
-    let y = 20
-
-    // heavy task start here
-    pdf.setFontSize(10)
-    pdf.text("BKTK INTERNATIONAL", 14, y)
-    y += 6
-    pdf.text("1 Avenue Louis Blériot, Local: A22", 14, y)
-    y += 5
-    pdf.text("La Courneuve, 93120 – France", 14, y)
-    y += 5
-    pdf.text("+33 9 77 37 61 67", 14, y)
-
-    pdf.setFontSize(20)
-    pdf.text("BON DE LIVRAISON", 190, 24, { align: "right" })
-
-    pdf.setFontSize(10)
-    pdf.text(`Date: ${today()}`, 190, 32, { align: "right" })
-
-    pdf.setFontSize(10)
-    pdf.text(`Livraison demandé: ${date}`, 190, 38, { align: "right" })
-
-    pdf.setFontSize(10)
-    pdf.text(`Signé par: ${user.emailAddresses}`, 190, 50, { align: "right" })
-    pdf.setFontSize(6)
-    pdf.text( `REF:${user.id.replace(/^user_/, "")}`, 238, 60, { align: "right", angle: 90 } );
-
-
-    // Client
-    y = 46
-    pdf.setFontSize(10)
-    pdf.text("Pour le site :", 14, y);
-    const header = site ? getSiteHeader(site.slug) : null;
-
-    if (header) {
-      let y = 50;
-
-      pdf.text(header.name, 14, y);
-      y += 5;
-
-      pdf.text(header.line1, 14, y);
-      y += 5;
-
-      pdf.text(header.line2, 14, y);
-      y += 10;
-    }
-
-    // Table header
-    y += 30
-    pdf.setFillColor(40, 40, 40)
-    pdf.rect(14, y, 182, 8, "F")
-
-    pdf.setTextColor(255)
-    pdf.text("#", 16, y + 5)
-    pdf.text("Article & Description", 28, y + 5)
-    pdf.text("Quantité", 180, y + 5, { align: "right" })
-
-    pdf.setTextColor(0)
-    y += 15
-
-    // Rows
-    lines.forEach((l, i) => {
-      pdf.text(String(i + 1), 16, y)
-      pdf.text(l.name, 28, y)
-      pdf.text(l.unit, 28, y + 4)
-      pdf.text(
-        `${l.qty}`,
-        180,
-        y,
-        { align: "right" }
-      )
-      y += 14
-    }, [user])
-    pdf.setLineWidth(0.1);
-    pdf.roundedRect(10, 10, 190, 60, 4, 4); 
-    const blob = pdf.output("blob");
-    const url = URL.createObjectURL(blob);
-
-    // Build filename: sitename-for-date.pdf
-    const siteName = site?.name?.replace(/\s+/g, "") ?? "site";
-    const fileDate = date ?? today();
-
-    const filename = `${siteName}-${fileDate}.pdf`;
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-
-    URL.revokeObjectURL(url);
 
   }
 

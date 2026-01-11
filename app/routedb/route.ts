@@ -11,20 +11,21 @@ export async function GET() {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
-
 export async function POST(req: Request) {
   try {
     await connectDB();
     const body = await req.json();
 
-    // ✔️ Safe assertion — db is guaranteed after connectDB()
     const db = mongoose.connection.db!;
+    const result = await db.collection("deliveries").insertOne(body);
 
-    await db.collection("deliveries").insertOne(body);
-
-    return NextResponse.json({ ok: true, message: "Saved" });
+    return NextResponse.json({
+      ok: true,
+      id: result.insertedId.toString(),
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
+
