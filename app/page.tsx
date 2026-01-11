@@ -426,7 +426,20 @@ export function CreerDevis() {
     SendToBackDB(payload);
     const blob = pdf.output("blob");
     const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+
+    // Build filename: sitename-for-date.pdf
+    const siteName = site?.name?.replace(/\s+/g, "") ?? "site";
+    const fileDate = date ?? today();
+
+    const filename = `${siteName}-${fileDate}.pdf`;
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
+
   }
 
   return (
