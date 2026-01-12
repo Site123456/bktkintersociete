@@ -4,7 +4,12 @@ import { jsPDF } from "jspdf";
 import { Delivery } from "@/types/delivery";
 import { SITE_HEADERS } from "@/lib/sites";
 
-export default function PDFButton({ delivery }: { delivery: Delivery }) {
+type PDFButtonProps = {
+  delivery: Delivery;
+  full?: boolean; // optional full-width style
+};
+
+export default function PDFButton({ delivery, full }: PDFButtonProps) {
   const generatePDF = () => {
     const pdf = new jsPDF();
     let y = 20;
@@ -85,7 +90,11 @@ export default function PDFButton({ delivery }: { delivery: Delivery }) {
   return (
     <button
       onClick={generatePDF}
-      className="px-3 py-1.5 rounded-md bg-black text-white text-sm hover:bg-neutral-800 transition"
+      className={`
+        px-3 py-1.5 rounded-md text-sm font-medium text-white
+        bg-primary hover:bg-primary/90 transition
+        ${full ? "w-full justify-center flex" : "inline-flex"}
+      `}
     >
       Télécharger PDF
     </button>
