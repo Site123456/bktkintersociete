@@ -3,21 +3,12 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useTheme } from "next-themes";
 import PDFButton from "@/components/PDFButton";
 import Link from "next/link";
 import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet"
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 type SiteSlug =
@@ -100,11 +91,11 @@ export function PDFCard({ id, title, date, ref, siteName }: PDFCardProps) {
       <div className="relative w-full h-40 overflow-hidden">
         <iframe
           src={`/pdf?id=${id}#page=1&zoom=80&toolbar=0&navpanes=0&scrollbar=0`}
-          className="w-full h-[50vh] min-h-[200px] border-none scale-100 group-hover:scale-[1.02] transition-transform origin-top"
+          className="w-full h-[50vh] min-h-50 border-none scale-100 group-hover:scale-[1.02] transition-transform origin-top"
           style={{ pointerEvents: "none" }}
         />
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent pointer-events-none" />
         {/* PDF badge */}
         <span className="absolute top-2 left-2 bg-primary/90 text-white text-xs font-semibold px-2 py-0.5 rounded-md shadow">
           PDF
@@ -136,29 +127,6 @@ export function PDFCard({ id, title, date, ref, siteName }: PDFCardProps) {
   );
 }
 
-function PdfThumbnail({ id }: { id: string }) {
-  return (
-<div className="relative w-full overflow-hidden rounded-lg border bg-muted shadow-sm">
-  {/* PDF iframe preview */}
-  <iframe
-    src={`/pdf?id=${id}#page=1&zoom=80&toolbar=0&navpanes=0&scrollbar=0`}
-    className="w-full h-[60vh] min-h-[200px] border-none"
-    style={{ pointerEvents: "none" }}
-  />
-
-  {/* Top gradient overlay */}
-  <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent pointer-events-none" />
-
-  {/* Optional "PDF" badge */}
-  <span className="absolute top-2 left-2 bg-primary/90 text-white text-xs font-semibold px-2 py-0.5 rounded-md shadow">
-    PDF
-  </span>
-</div>
-
-
-  )
-}
-
 export default function DeliveriesClient({
   deliveries,
   selectedSite,
@@ -167,7 +135,6 @@ export default function DeliveriesClient({
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme } = useTheme();
   /* AUTH CHECK -------------------------------------------------------- */
   useEffect(() => {
     if (isLoaded && !user) router.push("/");
