@@ -3,12 +3,24 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import PDFButton from "@/components/PDFButton";
 import Link from "next/link";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+
 import {
   Sheet,
   SheetContent,
-} from "@/components/ui/sheet"
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button"
 
 type SiteSlug =
@@ -75,55 +87,61 @@ const scoreMatch = (text: string, q: string) => {
   }
   return score;
 };
+
 type PDFCardProps = {
   id: string;
   title: string;
-  date?: string;
-  ref?: string;
+  date: string;
+  ref: string;
   siteName?: string;
+  setPreview: (preview: { id: string; title: string; date: string; ref: string; siteName?: string } | null) => void;
 };
 
-export function PDFCard({ id, title, date, ref, siteName }: PDFCardProps) {
+export function PDFCard({ id, title, date, ref, siteName, setPreview }: PDFCardProps) {
   return (
-    <div className="relative group w-full overflow-hidden rounded-xl border bg-muted shadow-sm hover:shadow-lg transition-shadow">
-      
-      {/* PDF Preview iframe */}
-      <div className="relative w-full h-40 overflow-hidden">
+    <Card className="group overflow-hidden transition hover:shadow-lg cursor-pointer">
+      {/* PDF Thumbnail */}
+      <div className="relative w-full overflow-hidden rounded-lg border bg-muted shadow-sm aspect-[16/9]">
         <iframe
           src={`/pdf?id=${id}#page=1&zoom=80&toolbar=0&navpanes=0&scrollbar=0`}
-          className="w-full h-[50vh] min-h-50 border-none scale-100 group-hover:scale-[1.02] transition-transform origin-top"
-          style={{ pointerEvents: "none" }}
+          className="absolute inset-0 w-full h-full border-none pointer-events-none scale-[1.05] origin-top-left"
         />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent pointer-events-none" />
-        {/* PDF badge */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent pointer-events-none" />
         <span className="absolute top-2 left-2 bg-primary/90 text-white text-xs font-semibold px-2 py-0.5 rounded-md shadow">
           PDF
         </span>
       </div>
 
-      {/* Footer info */}
-      <div className="p-4 space-y-1">
-        <h3 className="text-base font-semibold truncate">{title}</h3>
-        {date && <p className="text-xs text-muted-foreground">{date}</p>}
-        {ref && <p className="text-xs text-muted-foreground">Ref: {ref}</p>}
-        {siteName && <p className="text-xs text-muted-foreground truncate">{siteName}</p>}
-        <div className="mt-2 flex gap-2">
-          <Link
-            href={`/pdf?id=${id}`}
-            target="_blank"
-            className="flex-1 text-center text-sm px-3 py-1.5 rounded-md bg-primary text-white hover:bg-primary/90 transition"
-          >
-            Ouvrir PDF
-          </Link>
-          <button
-            className="flex-1 text-center text-sm px-3 py-1.5 rounded-md border border-primary text-primary hover:bg-primary/10 transition"
-          >
-            Aperçu
-          </button>
-        </div>
-      </div>
-    </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription>{date}</CardDescription>
+      </CardHeader>
+
+      <CardContent className="text-sm space-y-1">
+        <p><strong>Réf :</strong> {ref}</p>
+        {siteName && <p className="text-muted-foreground truncate">{siteName}</p>}
+      </CardContent>
+
+      <CardFooter className="flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1 text-sm"
+          onClick={() =>
+            setPreview({ id, title, date, ref, siteName })
+          }
+        >
+          Aperçu
+        </Button>
+
+        <a
+          href={`/pdf?id=${id}`}
+          target="_blank"
+          className="flex-1 text-center text-sm px-3 py-1.5 rounded-md border border-primary text-primary hover:bg-primary/10 transition"
+        >
+          Télécharger
+        </a>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -156,7 +174,13 @@ export default function DeliveriesClient({
   }
   const search = searchParams.get("q") || "";
   const [localSearch, setLocalSearch] = useState(search);
-  const [preview, setPreview] = useState<Delivery | null>(null);
+  const [preview, setPreview] = useState<{
+    id: string;
+    title: string;
+    date: string;
+    ref: string;
+    siteName?: string;
+  } | null>(null);
   const isSiteSlug = (value: string): value is SiteSlug =>
   ["BKTK01","BKTK02","BKTK03","BKTK04","BKTK05","BKTK06","BKTK07","BKTK08"].includes(value)
 
@@ -283,6 +307,7 @@ export default function DeliveriesClient({
         date={d.date}
         ref={d.ref}
         siteName={d.site?.name}
+        setPreview={setPreview}
       />
     ))}
   </section>
@@ -294,32 +319,28 @@ export default function DeliveriesClient({
     </p>
   )}
 
-  {/* PREVIEW */}
   <Sheet open={!!preview} onOpenChange={() => setPreview(null)}>
     <SheetContent side="right" className="w-full sm:max-w-[520px] p-0">
       {preview && (
         <>
-          <div className="p-4 border-b">
-            <h2 className="font-semibold">
-              Livraison #{shortId(preview._id)}
-            </h2>
-          </div>
+          <SheetHeader>
+            <SheetTitle>{preview.title}</SheetTitle>
+            <SheetDescription>{preview.date}</SheetDescription>
+          </SheetHeader>
 
-          <div className="p-4 space-y-3 text-sm">
-            <PDFButton delivery={preview} full />
+          <div className="px-2 space-y-2">
             <p><strong>Réf :</strong> {preview.ref}</p>
-            <p><strong>Signé :</strong> {preview.signedBy}</p>
+            {preview.siteName && <p><strong>Site :</strong> {preview.siteName}</p>}
           </div>
 
           <iframe
-            src={`/pdf?id=${preview._id}`}
+            src={`/pdf?id=${preview.id}`}
             className="w-full h-[calc(100vh-180px)]"
           />
         </>
       )}
     </SheetContent>
   </Sheet>
-
 </div>
 
 );
