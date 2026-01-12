@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
   await connectDB();
   const db = mongoose.connection.db!;
-
+  if (!mongoose.Types.ObjectId.isValid(id)) { return new NextResponse("Invalid delivery ID", { status: 404 }); }
   const delivery = await db
     .collection("deliveries")
     .findOne({ _id: new mongoose.Types.ObjectId(id) });
