@@ -34,7 +34,7 @@
 
   { "uniquename": "CHAUMIN NOODLES", "typedequantite": "1 carton = 6 x 2KG" },
   { "uniquename": "CHILLI POWDER", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "CITRON JAUNE", "typedequantite": "1 pcs = carton" },
+  { "uniquename": "CITRON JAUNE", "typedequantite": "1 = carton" },
   { "uniquename": "CITRON SYROPE", "typedequantite": "1 pcs = 5L" },
   { "uniquename": "CLOVES GIROFLE", "typedequantite": "1 pcs = 1KG" },
 
