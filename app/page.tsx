@@ -1,5 +1,7 @@
 "use client";
+
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from 'next/link';
 
@@ -30,8 +32,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { motion, AnimatePresence } from "framer-motion";
-
-import jsPDF from "jspdf"
 import produitsRaw from "@/data/produits.json"
 import { Plus, Minus, Trash2, Search as SearchIcon } from "lucide-react"
 // --------------------------------------------------
@@ -43,16 +43,6 @@ type Site = {
   slug: string;
   name: string;
 };
-
-type SiteSlug =
-  | "BKTK01"
-  | "BKTK02"
-  | "BKTK03"
-  | "BKTK04"
-  | "BKTK05"
-  | "BKTK06"
-  | "BKTK07"
-  | "BKTK08";
 const FALLBACK_SITES: Site[] = [
   { slug: "BKTK01", name: "INS Paris 15" },
   { slug: "BKTK02", name: "INS Bordeaux" },
@@ -63,51 +53,6 @@ const FALLBACK_SITES: Site[] = [
   { slug: "BKTK07", name: "AFS" },
   { slug: "BKTK08", name: "Koseli Buffet" },
 ];
-const SITE_HEADERS: Record<SiteSlug, {
-  name: string;
-  line1: string;
-  line2: string;
-}> = {BKTK01: {
-  name: "INDIAN NEPALI SWAD PARIS",
-  line1: "4 rue Bargue",
-  line2: "75015 Paris, France",
-},
-BKTK02: {
-  name: "INDIAN NEPALI SWAD Bordeaux",
-  line1: "170 Cours du Médoc",
-  line2: "33000 Bordeaux, France",
-},
-BKTK03: {
-  name: "INDIAN NEPALI SWAD Courbevoie",
-  line1: "13 Rue Latérale",
-  line2: "92400 Courbevoie, France",
-},
-BKTK04: {
-  name: "INDIAN NEPALI SWAD Saint-Ouen",
-  line1: "12 Rue Palouzie",
-  line2: "93400 Saint-Ouen, France",
-},
-BKTK05: {
-  name: "INDIAN NEPALI SWAD Bagneux",
-  line1: "5 Allée du Parc de Garlande",
-  line2: "92220 Bagneux, France",
-},
-BKTK06: {
-  name: "INDIAN NEPALI SWAD Ivry",
-  line1: "11 Rue Moïse",
-  line2: "94200 Ivry-sur-Seine, France",
-},
-BKTK07: {
-  name: "ASIAN FOOD STATION",
-  line1: "51 Avenue Paul Vaillant Couturier",
-  line2: "93120 La Courneuve",
-},
-BKTK08: {
-  name: "KOSELI BUFFET",
-  line1: "197 Avenue Paul Vaillant Couturier",
-  line2: "93120 La Courneuve, France",
-}
-}
 function AppLoader() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -223,9 +168,21 @@ async function SendToBackDB(
   const data = await res.json();
   onSuccess(data.id);
 }
-/* ---------------- PAGE ---------------- */
-export function CreerDevis() {
+export function PdfViewer({ id }: { id: string }) {
+  return (
+    <iframe
+      src={`/pdf?id=${id}`}
+      style={{
+        width: "100%",
+        height: "100vh",
+        border: "none",
+      }}
+    />
+  );
+}
 
+export function CreerDevis() {
+  const router = useRouter();
   const { user } = useUser();
   const produits = produitsRaw as Produit[]
   const [lines, setLines] = useState<Line[]>([])
@@ -345,9 +302,7 @@ export function CreerDevis() {
       })),
     };
     SendToBackDB(payload, (id) => {
-      setTimeout(() => {
-        window.open(`/pdf?id=${id}`, "_blank");
-      }, 1500);
+      router.push(`/pdf?id=${id}`);
     });
 
 
