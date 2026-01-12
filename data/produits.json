@@ -30,6 +30,8 @@
   { "uniquename": "CARDAMON GREEN", "typedequantite": "1 pcs = 750G" },
   { "uniquename": "CAROTTE", "typedequantite": "1 pcs = KG" },
 
+  { "uniquename": "CHARLOTTE (KITCHEN CAP)", "typedequantite": "1 pack = 100 pcs" },
+
   { "uniquename": "CHAUMIN NOODLES", "typedequantite": "1 carton = 6 x 2KG" },
   { "uniquename": "CHILLI POWDER", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "CITRON JAUNE", "typedequantite": "1 pcs = carton" },
@@ -59,8 +61,105 @@
   { "uniquename": "DAL MOONG", "typedequantite": "1 pcs = 1KG" },
   { "uniquename": "DAL TOOR", "typedequantite": "1 pcs = 1KG" },
 
+  { "uniquename": "DALCHINI CINNAMON STICK", "typedequantite": "1 pcs = paquet" },
+  { "uniquename": "DEGRAISSANT", "typedequantite": "1 pcs = 5L" },
+
   { "uniquename": "EGG", "typedequantite": "1 crate = 30 pcs" },
 
+  { "uniquename": "EMPORTER BOITE 500PP", "typedequantite": "1 carton = 300 pcs" },
+  { "uniquename": "EMPORTER BOITE 750PP", "typedequantite": "1 carton = 300 pcs" },
+  { "uniquename": "EMPORTER BOITE DESSERT", "typedequantite": "1 carton = 250 pcs" },
+  { "uniquename": "EMPORTER KIT COUVERT", "typedequantite": "1 carton = 250 pcs" },
+  { "uniquename": "EMPORTER LASSI BOTTLE", "typedequantite": "1 carton = 112 pcs (500ML)" },
+  { "uniquename": "EMPORTER NAAN SAC", "typedequantite": "1 carton = 1000 pcs" },
+  { "uniquename": "EMPORTER PAPER SAC INS", "typedequantite": "1 carton = 250 pcs" },
+  { "uniquename": "EMPORTER SAC PLASTIC BOISSON", "typedequantite": "1 carton = 500 pcs" },
+  { "uniquename": "EMPORTER SAUCE COLIS", "typedequantite": "1 carton = 5000 pcs" },
+
+  { "uniquename": "EPONGE", "typedequantite": "1 pack = 10 pcs" },
+
+  { "uniquename": "FILM PLASTIC LONG 44CM", "typedequantite": "1 pcs = rouleau" },
+  { "uniquename": "FILM PLASTIC SHORT 30CM", "typedequantite": "1 pcs = rouleau" },
+
+  { "uniquename": "FLOOR CLEANING MULTISURFACES", "typedequantite": "1 pcs = 5L" },
+
+  { "uniquename": "GLOVES GANT", "typedequantite": "1 pack = 100 pcs" },
+  { "uniquename": "INOX JALI", "typedequantite": "1 pack = 10 pcs" },
+  { "uniquename": "JAVEL", "typedequantite": "1 pcs = 5L" },
+
+  { "uniquename": "LAVETTE TORCHON BLUE", "typedequantite": "1 pcs = unité" },
+  { "uniquename": "LIGHTER GUN", "typedequantite": "1 pcs = unité" },
+
+  { "uniquename": "PLASTIC APRON", "typedequantite": "1 pack = 100 pcs" },
+
+  { "uniquename": "ROULEAU DELIVEROO CB THERMIC PAPER", "typedequantite": "1 pcs = rouleau" },
+  { "uniquename": "ROULEAU HYGIENE D'ETIQUETTE", "typedequantite": "1 pcs = rouleau" },
+  { "uniquename": "ROULEAU TISSUE", "typedequantite": "1 pack = 6 pcs" },
+  { "uniquename": "SAC POUBELLE TRANSPARENT 130L", "typedequantite": "1 pack = 20 pcs" },
+
+  { "uniquename": "SALADE ICEBERG", "typedequantite": "1 pcs = pièce" },
+
+  { "uniquename": "SALT SEL FIN", "typedequantite": "1 pcs = 1KG" },
+  { "uniquename": "SOYA SAUCE DARK", "typedequantite": "1 pcs = bouteille" },
+  { "uniquename": "SOYA SAUCE LIGHT", "typedequantite": "1 pcs = bouteille" },
+
+  { "uniquename": "STAR ANIS", "typedequantite": "1 pcs = 500G" },
+  { "uniquename": "SUGAR", "typedequantite": "1 pcs = 25KG" },
+  { "uniquename": "SUJI", "typedequantite": "1 pcs = 5KG" },
+
+  { "uniquename": "TEJ PATTA BAY LEAF", "typedequantite": "1 pcs = paquet" },
+
+  { "uniquename": "TOMATE FRESH", "typedequantite": "1 pcs = carton" },
+  { "uniquename": "TOMATE TIN METRO", "typedequantite": "1 pack = 3 x 4.05KG" },
+  { "uniquename": "TOMATO TIN INDIAN", "typedequantite": "1 carton = 2.5KG x 6 pcs" },
+
+  { "uniquename": "VINAIGRE CRISTAL", "typedequantite": "1 pcs = 1L" },
+
+  { "uniquename": "YAOURT NATURE", "typedequantite": "1 carton = 3 x (16 x 125G)" },
+
+  { "uniquename": "CHANA CANNETTE FOR STAFFS", "typedequantite": "1 pcs = canette" },
+  { "uniquename": "CORIANDRE FRAICHES", "typedequantite": "1 pcs = botte" },
+
+  { "uniquename": "DHANIA POWDER", "typedequantite": "1 pcs = 1KG" },
+  { "uniquename": "DHANIYA WHOLE", "typedequantite": "1 pcs = 750G" },
+  { "uniquename": "DRY CHILLI WHOLE", "typedequantite": "1 pcs = 500G" },
+
+  { "uniquename": "GREEN CARDAMON", "typedequantite": "1 pcs = 750G" },
+  { "uniquename": "GREEN CHILLI", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "HOTTE CLEANING POWDER", "typedequantite": "1 pcs = 10KG" },
+
+  { "uniquename": "JEERA PAPAD", "typedequantite": "1 pack = 200G x 10" },
+  { "uniquename": "KASURI METHI", "typedequantite": "1 pcs = 1KG" },
+  { "uniquename": "MADRAS POWDER", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "MANGO PULPE", "typedequantite": "1 carton = 850G x 12 pcs" },
+
+  { "uniquename": "MEAT CULOTTE D'AGNEAU HALAL", "typedequantite": "1 pcs = KG" },
+  { "uniquename": "MENTHES FRAICHES", "typedequantite": "1 pcs = botte" },
+  { "uniquename": "METHI SEEDS", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "MIXED PICKLE", "typedequantite": "1 pcs = 4.25KG" },
+  { "uniquename": "MUSTARD SEEDS", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "PAPRIKA", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "PASTE BIRYANI", "typedequantite": "1 pcs = 2.2KG" },
+  { "uniquename": "PASTE MADRAS", "typedequantite": "1 pcs = 2.2KG" },
+  { "uniquename": "PASTE TIKKA MASALA", "typedequantite": "1 pcs = 2.2KG" },
+  { "uniquename": "PASTE VINDALOO", "typedequantite": "1 pcs = 2.2KG" },
+
+  { "uniquename": "POIVRON VERT", "typedequantite": "1 pcs = carton" },
+  { "uniquename": "POIVRONS ROUGE", "typedequantite": "1 pcs = carton" },
+
+  { "uniquename": "JUMBO POULET", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "RAJMA CHANA CANETTE FOR STAFFS", "typedequantite": "1 pcs = canette" },
+  { "uniquename": "RAJMA HARICOT ROUGE", "typedequantite": "1 pcs = 1KG" },
+
+  { "uniquename": "ROSE WATER", "typedequantite": "1 pack = 12 x 190ML" },
+
+  { "uniquename": "SALADE ICEBERG", "typedequantite": "1 pcs = pièce" },
   { "uniquename": "FARINE T-55", "typedequantite": "1 pack = 1KG x 10" },
   { "uniquename": "FENNEL SEEDS", "typedequantite": "1 pcs = 1KG" },
 
@@ -95,50 +194,5 @@
   { "uniquename": "POTATO", "typedequantite": "1 pcs = KG" },
 
   { "uniquename": "RICE", "typedequantite": "1 pcs = 20KG" },
-  { "uniquename": "ROSE SYROP", "typedequantite": "1 pcs = 750ML" },
-
-  { "uniquename": "SALT SEL FIN", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "SOYA SAUCE DARK", "typedequantite": "1 pcs = bouteille" },
-  { "uniquename": "SOYA SAUCE LIGHT", "typedequantite": "1 pcs = bouteille" },
-
-  { "uniquename": "SUGAR", "typedequantite": "1 pcs = 25KG" },
-  { "uniquename": "SUJI", "typedequantite": "1 pcs = 5KG" },
-
-  { "uniquename": "VINAIGRE CRISTAL", "typedequantite": "1 pcs = 1L" },
-  { "uniquename": "YAOURT NATURE", "typedequantite": "1 carton = 3 x (16 x 125G)" },
-
-  { "uniquename": "CHANA CANNETTE FOR STAFFS", "typedequantite": "1 pcs = canette" },
-  { "uniquename": "CORIANDRE FRAICHES", "typedequantite": "1 pcs = botte" },
-  { "uniquename": "DALCHINI CINAMON STICK", "typedequantite": "1 pcs = paquet" },
-  { "uniquename": "DHANIA POWDER 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "DHANIYA WHOLE 750GM", "typedequantite": "1 pcs = 750G" },
-  { "uniquename": "DRY CHILLI WHOLE 500GM", "typedequantite": "1 pcs = 500G" },
-  { "uniquename": "GREEN CARDAMON 750G", "typedequantite": "1 pcs = 750G" },
-  { "uniquename": "GREEN CHILLI KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "HOTTE CLEANING POWDER 10KG", "typedequantite": "1 pcs = 10KG" },
-  { "uniquename": "JEERA PAPAD 200GMx10", "typedequantite": "1 pack = 200G x 10" },
-  { "uniquename": "KASURI METHI 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "MADRAS POWDER 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "MANGO PULPE 1CTN=850Gx12PCS", "typedequantite": "1 carton = 850G x 12 pcs" },
-  { "uniquename": "MEAT CULOTTE D'AGNEAU HALAL", "typedequantite": "1 pcs = KG" },
-  { "uniquename": "MENTHES FRAICHES", "typedequantite": "1 pcs = botte" },
-  { "uniquename": "METHI SEEDS 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "MIXED PICKLE 4.25KG", "typedequantite": "1 pcs = 4.25KG" },
-  { "uniquename": "MUSTARD SEEDS 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "PAPRIKA 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "PASTE BIRYANI 2.2KG", "typedequantite": "1 pcs = 2.2KG" },
-  { "uniquename": "PASTE MADRAS 2.2KG", "typedequantite": "1 pcs = 2.2KG" },
-  { "uniquename": "PASTE TIKKA MASALA 2.2KG", "typedequantite": "1 pcs = 2.2KG" },
-  { "uniquename": "PASTE VINDALOO 2.2KG", "typedequantite": "1 pcs = 2.2KG" },
-  { "uniquename": "POIVRON VERT CTN", "typedequantite": "1 pcs = carton" },
-  { "uniquename": "POIVRONS ROUGE CTN", "typedequantite": "1 pcs = carton" },
-  { "uniquename": "JUMBO POULET 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "RAJMA CHANA CANETTE FOR STAFFS", "typedequantite": "1 pcs = canette" },
-  { "uniquename": "RAJMA HARICOT ROUGE 1KG", "typedequantite": "1 pcs = 1KG" },
-  { "uniquename": "ROSE WATER PACK 12x190ML", "typedequantite": "1 pack = 12 x 190ML" },
-  { "uniquename": "STAR ANIS 500GM", "typedequantite": "1 pcs = 500G" },
-  { "uniquename": "TEJ PATTA BAY LEAF", "typedequantite": "1 pcs = paquet" },
-  { "uniquename": "TOMATE FRESH CTN", "typedequantite": "1 pcs = carton" },
-  { "uniquename": "TOMATE TIN METRO (3x4.05KG)", "typedequantite": "1 pack = 3 x 4.05KG" },
-  { "uniquename": "TOMATO TIN INDIAN (1CTN=2.5x6PCS)", "typedequantite": "1 carton = 2.5KG x 6 pcs" }
+  { "uniquename": "ROSE SYROP", "typedequantite": "1 pcs = 750ML" }
 ]
