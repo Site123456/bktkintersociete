@@ -19,7 +19,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button"
 
@@ -101,12 +100,12 @@ export function PDFCard({ id, title, date, ref, siteName, setPreview }: PDFCardP
   return (
     <Card className="group overflow-hidden transition hover:shadow-lg cursor-pointer">
       {/* PDF Thumbnail */}
-      <div className="relative w-full overflow-hidden rounded-lg border bg-muted shadow-sm aspect-[16/9]">
+      <div className="relative w-full overflow-hidden rounded-lg border bg-muted shadow-sm aspect-video">
         <iframe
           src={`/pdf?id=${id}#page=1&zoom=80&toolbar=0&navpanes=0&scrollbar=0`}
           className="absolute inset-0 w-full h-full border-none pointer-events-none scale-[1.05] origin-top-left"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-t from-background/70 to-transparent pointer-events-none" />
         <span className="absolute top-2 left-2 bg-primary/90 text-white text-xs font-semibold px-2 py-0.5 rounded-md shadow">
           PDF
         </span>
@@ -181,10 +180,6 @@ export default function DeliveriesClient({
     ref: string;
     siteName?: string;
   } | null>(null);
-  const isSiteSlug = (value: string): value is SiteSlug =>
-  ["BKTK01","BKTK02","BKTK03","BKTK04","BKTK05","BKTK06","BKTK07","BKTK08"].includes(value)
-
-
   function changeSearch(value: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set("q", value);
@@ -320,7 +315,7 @@ export default function DeliveriesClient({
   )}
 
   <Sheet open={!!preview} onOpenChange={() => setPreview(null)}>
-    <SheetContent side="right" className="w-full sm:max-w-[520px] p-0">
+    <SheetContent side="right" className="w-full sm:max-w-130 p-0">
       {preview && (
         <>
           <SheetHeader>
