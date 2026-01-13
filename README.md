@@ -12,4 +12,5 @@ npm install
  jspdf
  mongoose
 
- Main branch : https://bktkintersociete.vercel.app/
+// do not change for now
+https://bktkintersociete.vercel.app/
