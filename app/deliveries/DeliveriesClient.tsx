@@ -98,12 +98,12 @@ type PDFCardProps = {
 
 export function PDFCard({ id, title, date, ref, siteName, setPreview }: PDFCardProps) {
   return (
-    <Card className="group overflow-hidden transition hover:shadow-lg cursor-pointer">
+    <Card className="group overflow-hidden transition pt-0 hover:shadow-lg cursor-pointer">
       {/* PDF Thumbnail */}
-      <div className="relative w-full overflow-hidden rounded-lg border bg-muted shadow-sm aspect-video">
+      <div className="relative w-full h-40 overflow-hidden shadow-sm p-0 m-0">
         <iframe
-          src={`/pdf?id=${id}#page=1&zoom=80&toolbar=0&navpanes=0&scrollbar=0`}
-          className="absolute inset-0 w-full h-full border-none pointer-events-none scale-[1.05] origin-top-left"
+          src={`/pdf?id=${id}#page=1&zoom=40&toolbar=0&navpanes=0&scrollbar=0`}
+          className="absolute inset-0 w-full border-none pointer-events-none overflow-hidden scale-[1.05] origin-top-left"
         />
         <div className="absolute inset-0 bg-linear-to-t from-background/70 to-transparent pointer-events-none" />
         <span className="absolute top-2 left-2 bg-primary/90 text-white text-xs font-semibold px-2 py-0.5 rounded-md shadow">
@@ -322,16 +322,11 @@ export default function DeliveriesClient({
             <SheetTitle>{preview.title}</SheetTitle>
             <SheetDescription>{preview.date}</SheetDescription>
           </SheetHeader>
-
-          <div className="px-2 space-y-2">
-            <p><strong>Réf :</strong> {preview.ref}</p>
-            {preview.siteName && <p><strong>Site :</strong> {preview.siteName}</p>}
-          </div>
-
           <iframe
-            src={`/pdf?id=${preview.id}`}
-            className="w-full h-[calc(100vh-180px)]"
-          />
+            src={`/pdf?id=${preview.id}#page=1&zoom=auto&toolbar=1&navpanes=1&scrollbar=1`}
+            className="w-full h-[calc(100vh-60px)] border-none"
+          ></iframe>
+
         </>
       )}
     </SheetContent>
