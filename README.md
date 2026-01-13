@@ -12,5 +12,5 @@ npm install
  jspdf
  mongoose
 
-// do not change for now
+
 https://bktkintersociete.vercel.app/
