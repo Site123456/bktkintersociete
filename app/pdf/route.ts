@@ -234,7 +234,7 @@ export async function GET(req: Request) {
 
   pdf.text("#", M + 2, headerY);
   pdf.text("Article", M + 14, headerY);
-  pdf.text("Qté", W - M - 2, headerY, { align: "right" });
+  pdf.text("Qté", W - M - 4, headerY, { align: "right" });
 
   y += 6;
 
@@ -243,43 +243,40 @@ export async function GET(req: Request) {
   pdf.line(M, y, W - M, y);
 
   y += 2;
-  /* Items */
   delivery.items.forEach((item: DeliveryItem, i: number) => {
-    addPageIfNeeded(14);
+    addPageIfNeeded(10);
 
-    const rowHeight = 14;
+    const rowH = 10;
+    const baseY = y + 3;
     const isGray = i % 2 === 1;
 
     // Background stripe
     if (isGray) {
       pdf.setFillColor(245, 245, 245);
-      pdf.rect(M, y - 1, W - M * 2, rowHeight, "F");
+      pdf.rect(M, y - 1, W - M * 2, rowH, "F");
     }
 
-    // Vertical centering offset
-    const baseY = y + 5; // shifts text slightly down for better centering
+    // Shared text styles
+    pdf.setTextColor(30);
 
-    /* === Left index (#) === */
-    pdf.setFontSize(9).setTextColor(30);
+    // Index
+    pdf.setFontSize(9);
     pdf.text(String(i + 1), M + 2, baseY);
 
-    /* === Item name === */
-    pdf.text(
-      pdf.splitTextToSize(item.name, W - 110),
-      M + 14,
-      baseY
-    );
+    // Item name
+    pdf.text(pdf.splitTextToSize(item.name, W - 110), M + 14, baseY);
 
-    /* === Unit (slightly below center) === */
+    // Unit (sub‑label)
     pdf.setFontSize(8).setTextColor(120);
     pdf.text(item.unit, M + 14, baseY + 4);
 
-    /* === Quantity (center aligned vertically) === */
+    // Quantity
     pdf.setFontSize(9).setTextColor(30);
-    pdf.text(String(item.qty), W - M - 2, baseY, { align: "right" });
+    pdf.text(String(item.qty), W - M - 6, baseY, { align: "right" });
 
-    y += rowHeight;
+    y += rowH;
   });
+
 
 
 
