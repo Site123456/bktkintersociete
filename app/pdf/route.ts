@@ -128,7 +128,7 @@ export async function GET(req: Request) {
     pdf.text(`Expedition date / Date d'envoi`, 82, 48, {
       align: "left",
     });
-    pdf.roundedRect(70, 44, 90, 26, 1.2, 1.2);
+    pdf.roundedRect(70, 44, 90, 20, 1.2, 1.2);
     pdf.setFontSize(9).setTextColor(100);
     pdf.text(`${safe(delivery.signedBy)}`, mid, top + 7, {
       align: "right",
@@ -230,56 +230,127 @@ export async function GET(req: Request) {
 
 
   y += 5;
+  if (delivery.items.length > 20) {
+    /* ================= TWO‑COLUMN HEADER ================= */
+    const headerY = y + 1.5;
 
-  // Column titles (slightly bolder feel)
-  const headerY = y + 1.5; // subtle vertical centering
+    pdf.text("#", M + 2, headerY);
+    pdf.text("Article", M + 16, headerY);
+    pdf.text("Qté", W / 2 - 4, headerY, { align: "right" });
 
-  pdf.text("#", M + 2, headerY);
-  pdf.text("Article", M + 16, headerY);
-  pdf.text("Qté", W - M - 24, headerY, { align: "right" });
+    pdf.text("#", W / 2 + 2, headerY);
+    pdf.text("Article", W / 2 + 16, headerY);
+    pdf.text("Qté", W - M - 2, headerY, { align: "right" });
 
-  y += 6;
+    y += 6;
+    pdf.setDrawColor(180);
+    pdf.line(M, y, W - M, y);
+    y += 2;
 
-  // Bottom separator (slightly darker for structure)
-  pdf.setDrawColor(180);
-  pdf.line(M, y, W - M, y);
+    /* ================= TWO‑COLUMN ROWS ================= */
+    for (let i = 0; i < delivery.items.length; i += 2) {
+      addPageIfNeeded(12);
 
-  y += 2;
-  delivery.items.forEach((item: DeliveryItem, i: number) => {
-    addPageIfNeeded(10);
+      const rowH = 12;
+      const baseY = y + 4;
+      const isGray = (i / 2) % 2 === 1;
 
-    const rowH = 10;
-    const baseY = y + 3;
-    const isGray = i % 2 === 1;
+      if (isGray) {
+        pdf.setFillColor(245, 245, 245);
+        pdf.rect(M, y - 1, W - M * 2, rowH, "F");
+      }
 
-    // Background stripe
-    if (isGray) {
-      pdf.setFillColor(245, 245, 245);
-      pdf.rect(M, y - 1, W - M * 2, rowH, "F");
+      /* LEFT ITEM */
+      const left = delivery.items[i];
+      if (left) {
+        pdf.setFontSize(9).setTextColor(30);
+        pdf.text(String(i + 1), M + 2, baseY);
+
+        pdf.text(
+          pdf.splitTextToSize(left.name, (W / 2) - M - 30),
+          M + 16,
+          baseY
+        );
+
+        pdf.setFontSize(8).setTextColor(120);
+        pdf.text(left.unit, M + 16, baseY + 4);
+
+        pdf.setFontSize(9).setTextColor(30);
+        pdf.text(String(left.qty), W / 2 - 4, baseY, { align: "right" });
+      }
+
+      /* RIGHT ITEM */
+      const right = delivery.items[i + 1];
+      if (right) {
+        pdf.setFontSize(9).setTextColor(30);
+        pdf.text(String(i + 2), W / 2 + 2, baseY);
+
+        pdf.text(
+          pdf.splitTextToSize(right.name, (W / 2) - M - 30),
+          W / 2 + 16,
+          baseY
+        );
+
+        pdf.setFontSize(8).setTextColor(120);
+        pdf.text(right.unit, W / 2 + 16, baseY + 4);
+
+        pdf.setFontSize(9).setTextColor(30);
+        pdf.text(String(right.qty), W - M - 2, baseY, { align: "right" });
+      }
+
+      y += rowH;
     }
 
-    // Shared text styles
-    pdf.setTextColor(30);
+  } else {
 
-    // Index
-    pdf.setFontSize(9);
-    pdf.text(String(i + 1), M + 2, baseY);
+    // Column titles (slightly bolder feel)
+    const headerY = y + 1.5; // subtle vertical centering
 
-    // Item name
-    pdf.text(pdf.splitTextToSize(item.name, W - 110), M + 14, baseY);
+    pdf.text("#", M + 2, headerY);
+    pdf.text("Article", M + 16, headerY);
+    pdf.text("Qté", W - M - 24, headerY, { align: "right" });
 
-    // Unit (sub‑label)
-    pdf.setFontSize(8).setTextColor(120);
-    pdf.text(item.unit, M + 16, baseY + 4);
+    y += 6;
 
-    // Quantity
-    pdf.setFontSize(9).setTextColor(30);
-    pdf.text(String(item.qty), W - M - 26, baseY, { align: "right" });
+    // Bottom separator (slightly darker for structure)
+    pdf.setDrawColor(180);
+    pdf.line(M, y, W - M, y);
 
-    y += rowH;
-  });
+    y += 2;
+    delivery.items.forEach((item: DeliveryItem, i: number) => {
+      addPageIfNeeded(10);
 
+      const rowH = 10;
+      const baseY = y + 3;
+      const isGray = i % 2 === 1;
 
+      // Background stripe
+      if (isGray) {
+        pdf.setFillColor(245, 245, 245);
+        pdf.rect(M, y - 1, W - M * 2, rowH, "F");
+      }
+
+      // Shared text styles
+      pdf.setTextColor(30);
+
+      // Index
+      pdf.setFontSize(9);
+      pdf.text(String(i + 1), M + 2, baseY);
+
+      // Item name
+      pdf.text(pdf.splitTextToSize(item.name, W - 110), M + 14, baseY);
+
+      // Unit (sub‑label)
+      pdf.setFontSize(8).setTextColor(120);
+      pdf.text(item.unit, M + 16, baseY + 4);
+
+      // Quantity
+      pdf.setFontSize(9).setTextColor(30);
+      pdf.text(String(item.qty), W - M - 26, baseY, { align: "right" });
+
+      y += rowH;
+    });
+  }
 
 
   /* Footer on all pages */
