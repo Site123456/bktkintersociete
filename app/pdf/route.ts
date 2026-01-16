@@ -289,13 +289,12 @@ export async function GET(req: Request) {
     pdf.setPage(i);
     drawFooter(i, totalPages);
   }
-
-  /* ================= RESPONSE ================= */
-
+  const fileName = `bon-de-livraison-${delivery.site?.slug}-${safe(delivery.ref)}.pdf`;
   return new NextResponse(pdf.output("arraybuffer"), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": "inline; filename=delivery.pdf",
+      "Content-Disposition": `inline; filename="${fileName}"`,
     },
   });
+
 }
