@@ -121,9 +121,15 @@ export async function GET(req: Request) {
     pdf.text(`${safe(delivery.username).toUpperCase()}`, 82, top + 6, {
       align: "left",
     });
-    pdf.setFontSize(9).setTextColor(100);
+    pdf.setFontSize(8).setTextColor(0);
 
     pdf.roundedRect(80, top - 2, 80, 10, 1.2, 1.2);
+    
+    pdf.text(`Expedition date / Date d'envoi`, 82, 48, {
+      align: "left",
+    });
+    pdf.roundedRect(70, 44, 90, 26, 1.2, 1.2);
+    pdf.setFontSize(9).setTextColor(100);
     pdf.text(`${safe(delivery.signedBy)}`, mid, top + 7, {
       align: "right",
     });
@@ -197,10 +203,6 @@ export async function GET(req: Request) {
 
   /* Table Header */
   pdf.setFontSize(9.5).setTextColor(30);
-
-  // Top separator (very light)
-  pdf.setDrawColor(200);
-  pdf.line(M, y, W - M, y);
     // 5 solid colors as RGB tuples
   const swatches: [number, number, number][] = [
     [230, 230, 230], // white
@@ -233,8 +235,8 @@ export async function GET(req: Request) {
   const headerY = y + 1.5; // subtle vertical centering
 
   pdf.text("#", M + 2, headerY);
-  pdf.text("Article", M + 14, headerY);
-  pdf.text("Qté", W - M - 4, headerY, { align: "right" });
+  pdf.text("Article", M + 16, headerY);
+  pdf.text("Qté", W - M - 24, headerY, { align: "right" });
 
   y += 6;
 
@@ -268,11 +270,11 @@ export async function GET(req: Request) {
 
     // Unit (sub‑label)
     pdf.setFontSize(8).setTextColor(120);
-    pdf.text(item.unit, M + 14, baseY + 4);
+    pdf.text(item.unit, M + 16, baseY + 4);
 
     // Quantity
     pdf.setFontSize(9).setTextColor(30);
-    pdf.text(String(item.qty), W - M - 6, baseY, { align: "right" });
+    pdf.text(String(item.qty), W - M - 26, baseY, { align: "right" });
 
     y += rowH;
   });
