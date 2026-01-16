@@ -251,7 +251,7 @@ export default function DeliveriesClient({
     </h1>
 
     <Button asChild>
-      <Link href="/">+ Nouveau devis</Link>
+      <Link href="/">+ New Order</Link>
     </Button>
   </header>
 

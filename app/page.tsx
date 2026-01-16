@@ -9,7 +9,8 @@ import {
   Moon,
   Sun,
   Building2,
-  GripVertical
+  GripVertical,
+  Send
 } from "lucide-react";
 
 import {
@@ -553,10 +554,23 @@ export function CreerDevis() {
       <button
         onClick={generatePDF}
         disabled={!lines.length}
-        className="fixed inset-x-0 bottom-4 mx-6 h-12 rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
+        className={`
+          fixed inset-x-0 bottom-4 mx-6 h-12 rounded-xl 
+          bg-primary text-primary-foreground font-medium
+          flex items-center justify-center gap-2
+          transition-all duration-300 ease-out
+          shadow-lg shadow-black/5
+
+          ${lines.length 
+            ? "opacity-100 translate-y-0" 
+            : "opacity-0 translate-y-6 pointer-events-none"
+          }
+        `}
       >
-        Envoyer le devis
+        <Send className="h-5 w-5" />
+        Send Order
       </button>
+
     </main>
   )
 }
