@@ -54,6 +54,11 @@ const FALLBACK_SITES: Site[] = [
   { slug: "BKTK07", name: "AFS" },
   { slug: "BKTK08", name: "Koseli Buffet" },
 ];
+const products = produitsRaw.map(p => ({
+  name: p.uniquename,
+  unit: p.typedequantite,
+}));
+
 function AppLoader() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -182,6 +187,11 @@ export function PdfViewer({ id }: { id: string }) {
     />
   );
 }
+export type UIProduct = {
+  name: string;
+  unit: string;
+};
+
 
 export function CreerDevis() {
   const router = useRouter();
@@ -400,9 +410,8 @@ export function CreerDevis() {
           </ul>
         )}
       </div>
+      <section className="pb-40">
 
-
-      <section>
         {lines.map((l) => (
           <div
             key={l.id}
@@ -550,12 +559,53 @@ export function CreerDevis() {
         )}
 
       </section>
+      <div className="fixed p-0 m-0 bottom-0 inset-x-0 bg-accent/20 backdrop-blur-md border-t border-border">
+        <div className="px-4 overflow-x-auto no-scrollbar">
+          <div className="grid grid-flow-col auto-cols-[110px] sm:auto-cols-[130px] gap-3 py-3 snap-x snap-mandatory">
+            {produits.map((p, i) => (
+              <button
+                key={i}
+                onClick={() => addProduct(p)}
+                className="
+                  snap-start shrink-0
+                  rounded-lg border border-border
+                  bg-card text-card-foreground
+                  p-3 shadow-sm hover:shadow-md
+                  transition active:scale-95
+                  flex flex-col justify-between
+                "
+              >
+                <div>
+                  <p className="text-xs font-medium truncate">
+                    {p.uniquename}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {p.typedequantite}
+                  </p>
+                </div>
+
+                <div className="mt-2 flex justify-end">
+                  <svg
+                    className="w-4 h-4 text-muted-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <button
         onClick={generatePDF}
         disabled={!lines.length}
         className={`
-          fixed inset-x-0 bottom-4 mx-6 h-12 rounded-xl 
+          fixed inset-x-0 bottom-32 mx-8 h-12 rounded-xl 
           bg-primary text-primary-foreground font-medium
           flex items-center justify-center gap-2
           transition-all duration-300 ease-out
