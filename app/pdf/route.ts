@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/connectDB";
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 import { SITE_HEADERS } from "@/lib/sites";
+
+/* ================= HELPERS ================= */
+
+const safe = (v: unknown) =>
+  typeof v === "string" || typeof v === "number" ? String(v) : "";
+
+const getSiteHeader = (slug?: string) =>
+  slug ? SITE_HEADERS[slug as keyof typeof SITE_HEADERS] ?? null : null;
 
 type DeliveryItem = {
   name: string;
@@ -10,130 +19,180 @@ type DeliveryItem = {
   unit: string;
 };
 
-type Delivery = {
-  _id: string;
-  date: string;
-  requestedDeliveryDate: string;
-  signedBy: string;
-  ref: string;
-  site: { slug: string } | null;
-  items: DeliveryItem[];
-};
-
-const safe = (v: unknown): string =>
-  typeof v === "string" || typeof v === "number" ? String(v) : "";
-
-function getSiteHeader(slug: string | undefined | null) {
-  if (!slug) return null;
-  if (slug in SITE_HEADERS) {
-    return SITE_HEADERS[slug as keyof typeof SITE_HEADERS];
-  }
-  return null;
-}
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
+  const id = new URL(req.url).searchParams.get("id");
 
-  if (!id) {
-    return new NextResponse("Missing ID", { status: 400 });
-  }
+  if (!id) return new NextResponse("Missing ID", { status: 400 });
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return new NextResponse("Invalid ID", { status: 404 });
 
   await connectDB();
   const db = mongoose.connection.db!;
-  if (!mongoose.Types.ObjectId.isValid(id)) { return new NextResponse("Invalid delivery ID", { status: 404 }); }
-  const delivery = await db.collection("deliveries").findOne({ _id: new mongoose.Types.ObjectId(id) });
+  const delivery = await db
+    .collection("deliveries")
+    .findOne({ _id: new mongoose.Types.ObjectId(id) });
 
-  if (!delivery) {
-    return new NextResponse("Delivery not found", { status: 404 });
-  }
+  if (!delivery) return new NextResponse("Not found", { status: 404 });
 
-  const pdf = new jsPDF();
+  /* ================= PDF SETUP ================= */
+
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const W = pdf.internal.pageSize.getWidth();
+  const H = pdf.internal.pageSize.getHeight();
+  const M = 16;
+
   let y = 20;
 
-  /* ------------------------------ HEADER ------------------------------ */
+  /* ================= QR ================= */
 
-  pdf.setFontSize(10);
-  pdf.text("BKTK INTERNATIONAL", 14, y);
-  y += 6;
-  pdf.text("1 Avenue Louis Blériot, Local: A22", 14, y);
-  y += 5;
-  pdf.text("La Courneuve, 93120 – France", 14, y);
-  y += 5;
-  pdf.text("+33 9 77 37 61 67", 14, y);
-
-  pdf.setFontSize(20);
-  pdf.text("BON DE LIVRAISON", 190, 24, { align: "right" });
-
-  pdf.setFontSize(10);
-  pdf.text(`Date: ${safe(delivery.date)}`, 190, 32, { align: "right" });
-  pdf.text(
-    `Livraison demandé: ${safe(delivery.requestedDeliveryDate)}`,
-    190,
-    38,
-    { align: "right" }
+  const qrDataUrl = await QRCode.toDataURL(
+    `https://bktkintersociete.vercel.app/pdf?id=${id}`,
+    { margin: 0, width: 160 }
   );
-  pdf.text(`Signé par: ${safe(delivery.signedBy)}`, 190, 50, {
-    align: "right",
+
+  /* ================= HEADER (PAGE 1) ================= */
+
+  const drawHeader = () => {
+    pdf.setFontSize(10).setTextColor(30);
+    pdf.text("BKTK INTERNATIONAL", M, 14);
+    
+    pdf.setFontSize(8).setTextColor(110);
+    pdf.text("1 Avenue Louis Blériot, Local A22", M, 18);
+    pdf.text("93120 La Courneuve – France", M, 22);
+
+    pdf.setFontSize(23).setTextColor(20);
+    pdf.text("BON DE LIVRAISON", W - M, 16, { align: "right" });
+
+    pdf.setFontSize(8.5).setTextColor(110);
+    pdf.text(`REF : ${safe(delivery.ref)}`, W - M, 22, { align: "right" });
+
+    pdf.setDrawColor(220);
+    pdf.line(M, 26, W - M, 26);
+
+    /* Metadata grid */
+    const mid = W - (W / 4);
+    const top = 30;
+
+    pdf.setFontSize(9).setTextColor(40);
+
+    pdf.text(`Fait le : ${safe(delivery.date)}`, M, top + 2);
+    pdf.text(`Utilisateur : ${safe(delivery.username).toUpperCase()}`, mid, top + 2, {
+      align: "right",
+    });
+
+    pdf.text(
+      `Demandée pour : ${safe(delivery.requestedDeliveryDate)}`,
+      M,
+      top + 6
+    );
+    pdf.text(`Mail : ${safe(delivery.signedBy)}`, mid, top + 6, {
+      align: "right",
+    });
+    pdf.setFontSize(8);
+    pdf.text(`Verify in : https://bktkintersociete.vercel.app/pdf?id=${id}`, mid, top + 12, {
+      align: "right",
+    });
+
+    const site = getSiteHeader(delivery.site?.slug);
+    if (site) {
+      pdf.setFontSize(10);
+      pdf.text(`${site.name}`, M, top + 18);
+      pdf.setFontSize(9).setTextColor(110);
+      pdf.text(site.line1, M, top + 22);
+      pdf.text(site.line2, M, top + 26);
+    }
+
+    /* QR */
+    pdf.addImage(qrDataUrl, "PNG", W - M - 30, top - 2, 30, 30);
+
+    pdf.setDrawColor(225);
+
+    y = 64;
+  };
+
+  /* ================= COMPACT HEADER (OTHER PAGES) ================= */
+
+  const drawCompactHeader = () => {
+    pdf.setFontSize(10).setTextColor(30);
+    pdf.text("BON DE LIVRAISON", M, 14);
+
+    pdf.setFontSize(8).setTextColor(110);
+    pdf.text(`REF : ${safe(delivery.ref)}`, W - M, 14, { align: "right" });
+
+    pdf.setDrawColor(220);
+    pdf.line(M, 18, W - M, 18);
+
+    y = 28;
+  };
+
+  /* ================= FOOTER ================= */
+
+  const drawFooter = (page: number, total: number) => {
+    pdf.setDrawColor(230);
+    pdf.line(M, H - 18, W - M, H - 18);
+
+    pdf.setFontSize(7.5).setTextColor(120);
+    pdf.text(`Page ${page} / ${total}`, W / 2, H - 10, { align: "center" });
+    pdf.text("BKTK INTERNATIONAL", W - M, H - 10, { align: "right" });
+  };
+
+  /* ================= PAGE FLOW ================= */
+
+  const addPageIfNeeded = (h = 12) => {
+    if (y + h > H - 12) {
+      pdf.addPage();
+      drawCompactHeader();
+    }
+  };
+
+  /* ================= RENDER ================= */
+
+  drawHeader();
+
+  /* Table header */
+  pdf.setFontSize(9).setTextColor(40);
+  pdf.setDrawColor(225);
+  pdf.line(M, y, W - M, y);
+  y += 6;
+
+  pdf.text("#", M + 2, y);
+  pdf.text("Article", M + 14, y);
+  pdf.text("Qté", W - M - 2, y, { align: "right" });
+
+  y += 3;
+  pdf.setDrawColor(235);
+  pdf.line(M, y, W - M, y);
+  y += 7;
+
+  /* Items */
+  delivery.items.forEach((item: DeliveryItem, i: number) => {
+    addPageIfNeeded(12);
+
+    pdf.setFontSize(9).setTextColor(30);
+    pdf.text(String(i + 1), M + 2, y);
+
+    pdf.text(pdf.splitTextToSize(item.name, W - 110), M + 14, y);
+
+    pdf.setFontSize(8).setTextColor(120);
+    pdf.text(item.unit, M + 14, y + 4);
+
+    pdf.setFontSize(9).setTextColor(30);
+    pdf.text(String(item.qty), W - M - 2, y, { align: "right" });
+
+    y += 12;
   });
 
-  pdf.setFontSize(6);
-  pdf.text(`REF:${safe(delivery.ref)}`, 238, 60, {
-    align: "right",
-    angle: 90,
-  });
-
-  /* ------------------------------ SITE ------------------------------ */
-
-  y = 46;
-  pdf.setFontSize(10);
-  pdf.text("Pour le site :", 14, y);
-
-  const header = getSiteHeader(delivery.site?.slug);
-
-  if (header) {
-    let y2 = 50;
-
-    pdf.text(safe(header.name), 14, y2);
-    y2 += 5;
-
-    pdf.text(safe(header.line1), 14, y2);
-    y2 += 5;
-
-    pdf.text(safe(header.line2), 14, y2);
-    y2 += 10;
+  /* Footer on all pages */
+  const totalPages = pdf.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    drawFooter(i, totalPages);
   }
 
-  /* ------------------------------ TABLE HEADER ------------------------------ */
+  /* ================= RESPONSE ================= */
 
-  y += 30;
-  pdf.setFillColor(40, 40, 40);
-  pdf.rect(14, y, 182, 8, "F");
-
-  pdf.setTextColor(255);
-  pdf.text("#", 16, y + 5);
-  pdf.text("Article & Description", 28, y + 5);
-  pdf.text("Quantité", 180, y + 5, { align: "right" });
-
-  pdf.setTextColor(0);
-  y += 15;
-
-  /* ------------------------------ ITEMS ------------------------------ */
-  delivery.items.forEach((l: DeliveryItem, i: number) => {
-    pdf.text(String(i + 1), 16, y);
-    pdf.text(safe(l.name), 28, y);
-    pdf.text(safe(l.unit), 28, y + 4);
-    pdf.text(safe(l.qty), 180, y, { align: "right" });
-    y += 14;
-  });
-
-
-  pdf.setLineWidth(0.1);
-  pdf.roundedRect(10, 10, 190, 60, 4, 4);
-
-  const buffer = pdf.output("arraybuffer");
-
-  return new NextResponse(buffer, {
+  return new NextResponse(pdf.output("arraybuffer"), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": "inline; filename=delivery.pdf",

@@ -142,6 +142,7 @@ interface DeliveryPayload {
   date: string;
   requestedDeliveryDate: string;
   signedBy: string;
+  username: string;
   ref: string;
   site: string;
   items: Array<{
@@ -290,6 +291,7 @@ export function CreerDevis() {
       date: today(),
       requestedDeliveryDate: date,
       signedBy: user.primaryEmailAddress?.emailAddress ?? "",
+      username: user.username ?? "",
       ref: user.id.replace(/^user_/, ""),
 
       site: site,

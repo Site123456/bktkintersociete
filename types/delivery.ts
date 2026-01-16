@@ -25,6 +25,7 @@ export interface Delivery {
   date: string;
   requestedDeliveryDate: string;
   signedBy: string;
+  username: string;
   ref: string;
   site: {
     slug: SiteSlug;

@@ -76,6 +76,8 @@
   { "uniquename": "EMPORTER SAC PLASTIC BOISSON", "typedequantite": "1 carton = 500 pcs" },
   { "uniquename": "EMPORTER SAUCE COLIS", "typedequantite": "1 carton = 5000 pcs" },
 
+  { "uniquename": "EVIAN / VITTEL 50cl", "typedequantite": "1 = 1ctn (24pcs)" },
+
   { "uniquename": "EPONGE", "typedequantite": "1 pack = 10 pcs" },
 
   { "uniquename": "FILM PLASTIC LONG 44CM", "typedequantite": "1 = rouleau" },
