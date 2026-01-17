@@ -251,7 +251,7 @@ export async function GET(req: Request) {
       );
       pdf.setFontSize(9).setTextColor(80);
       pdf.text(
-        `- Bon de livraison pour ` + deliverydate,
+        `- Bon de livraison fait le ` + deliverydate,
         M + 28,
         headerTop + 5.5
       );
