@@ -54,10 +54,6 @@ const FALLBACK_SITES: Site[] = [
   { slug: "BKTK07", name: "AFS" },
   { slug: "BKTK08", name: "Koseli Buffet" },
 ];
-const products = produitsRaw.map(p => ({
-  name: p.uniquename,
-  unit: p.typedequantite,
-}));
 
 function AppLoader() {
   return (
