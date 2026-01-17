@@ -411,7 +411,6 @@ export function CreerDevis() {
         )}
       </div>
       <section className="pb-40">
-
         {lines.map((l) => (
           <div
             key={l.id}

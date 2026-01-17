@@ -231,77 +231,143 @@ export async function GET(req: Request) {
 
   y += 5;
   if (delivery.items.length > 20) {
-    /* ================= TWO‑COLUMN HEADER ================= */
-    const headerY = y + 1.5;
+    const ROW_H = 12;
+    const FIRST_PAGE_TOP_Y = 70;
+    const OTHER_PAGE_TOP_Y = 14;
+    const BOTTOM_MARGIN = 20;
+    const HEADER_BAR_H = 10;
 
-    pdf.text("#", M + 2, headerY);
-    pdf.text("Article", M + 16, headerY);
-    pdf.text("Qté", W / 2 - 4, headerY, { align: "right" });
-
-    pdf.text("#", W / 2 + 2, headerY);
-    pdf.text("Article", W / 2 + 16, headerY);
-    pdf.text("Qté", W - M - 2, headerY, { align: "right" });
-
-    y += 6;
-    pdf.setDrawColor(180);
-    pdf.line(M, y, W - M, y);
-    y += 2;
-
-    /* ================= TWO‑COLUMN ROWS ================= */
-    for (let i = 0; i < delivery.items.length; i += 2) {
-      addPageIfNeeded(12);
-
-      const rowH = 12;
-      const baseY = y + 4;
-      const isGray = (i / 2) % 2 === 1;
-
-      if (isGray) {
-        pdf.setFillColor(245, 245, 245);
-        pdf.rect(M, y - 1, W - M * 2, rowH, "F");
-      }
-
-      /* LEFT ITEM */
-      const left = delivery.items[i];
-      if (left) {
-        pdf.setFontSize(9).setTextColor(30);
-        pdf.text(String(i + 1), M + 2, baseY);
-
-        pdf.text(
-          pdf.splitTextToSize(left.name, (W / 2) - M - 30),
-          M + 16,
-          baseY
-        );
-
-        pdf.setFontSize(8).setTextColor(120);
-        pdf.text(left.unit, M + 16, baseY + 4);
-
-        pdf.setFontSize(9).setTextColor(30);
-        pdf.text(String(left.qty), W / 2 - 4, baseY, { align: "right" });
-      }
-
-      /* RIGHT ITEM */
-      const right = delivery.items[i + 1];
-      if (right) {
-        pdf.setFontSize(9).setTextColor(30);
-        pdf.text(String(i + 2), W / 2 + 2, baseY);
-
-        pdf.text(
-          pdf.splitTextToSize(right.name, (W / 2) - M - 30),
-          W / 2 + 16,
-          baseY
-        );
-
-        pdf.setFontSize(8).setTextColor(120);
-        pdf.text(right.unit, W / 2 + 16, baseY + 4);
-
-        pdf.setFontSize(9).setTextColor(30);
-        pdf.text(String(right.qty), W - M - 2, baseY, { align: "right" });
-      }
-
-      y += rowH;
+    function getRowsPerPage(topY: number) {
+      return Math.floor((H - topY - BOTTOM_MARGIN) / ROW_H);
     }
 
-  } else {
+    /* ================= PAGE HEADER ================= */
+    function drawPageHeader(page: number, delivery: string) {
+      const headerTop = 8;
+
+      // subtle header separator
+      pdf.setDrawColor(210);
+      pdf.line(M, headerTop + HEADER_BAR_H, W - M, headerTop + HEADER_BAR_H);
+
+      // Left: document info
+      pdf.setFontSize(9).setTextColor(60);
+      pdf.text("Delivery Items", M, headerTop + 6);
+
+      // Right: ref + page
+      pdf.setFontSize(8).setTextColor(120);
+      pdf.text(
+        `Ref: ${safe(delivery)}   Page ${page + 1}`,
+        W - M,
+        headerTop + 6,
+        { align: "right" }
+      );
+    }
+
+    /* ================= TABLE HEADER ================= */
+    function drawTableHeader() {
+      const headerY = y + 1.5;
+
+      pdf.setFontSize(9).setTextColor(40);
+
+      pdf.text("#", M + 2, headerY);
+      pdf.text("Article", M + 16, headerY);
+      pdf.text("Qté", W / 2 - 4, headerY, { align: "right" });
+
+      pdf.text("#", W / 2 + 2, headerY);
+      pdf.text("Article", W / 2 + 16, headerY);
+      pdf.text("Qté", W - M - 2, headerY, { align: "right" });
+
+      y += 6;
+      pdf.setDrawColor(180);
+      pdf.line(M, y - 2, W - M, y);
+      y += 2;
+    }
+
+    const items = delivery.items;
+
+    let globalIndex = 1;
+    let itemCursor = 0;
+    let page = 0;
+
+    while (itemCursor < items.length) {
+      const isFirstPage = page === 0;
+      const TOP_Y = isFirstPage ? FIRST_PAGE_TOP_Y : OTHER_PAGE_TOP_Y;
+      const ROWS_PER_PAGE = getRowsPerPage(TOP_Y);
+      const itemsPerPage = ROWS_PER_PAGE * 2;
+
+      if (page > 0) pdf.addPage();
+
+      drawPageHeader(page, delivery.ref);
+
+      y = TOP_Y;
+      drawTableHeader();
+
+      const pageItems = items.slice(
+        itemCursor,
+        itemCursor + itemsPerPage
+      );
+
+      const half = Math.ceil(pageItems.length / 2);
+      const leftCol = pageItems.slice(0, half);
+      const rightCol = pageItems.slice(half);
+
+      const maxRows = Math.max(leftCol.length, rightCol.length);
+
+      for (let i = 0; i < maxRows; i++) {
+        const rowY = y + 4;
+        const isGray = i % 2 === 1;
+
+        if (isGray) {
+          pdf.setFillColor(245, 245, 245);
+          pdf.rect(M, y - 1, W - M * 2, ROW_H, "F");
+        }
+
+        pdf.setDrawColor(200);
+        pdf.line(W / 2, y - 1, W / 2, y - 1 + ROW_H);
+
+        /* LEFT */
+        const left = leftCol[i];
+        if (left) {
+          pdf.setFontSize(9).setTextColor(30);
+          pdf.text(String(globalIndex), M + 2, rowY);
+          pdf.text(
+            pdf.splitTextToSize(left.name, (W / 2) - M - 30),
+            M + 16,
+            rowY
+          );
+          pdf.setFontSize(8).setTextColor(120);
+          pdf.text(left.unit, M + 16, rowY + 4);
+          pdf.setFontSize(9).setTextColor(30);
+          pdf.text(String(left.qty), W / 2 - 4, rowY, { align: "right" });
+          globalIndex++;
+        }
+
+        /* RIGHT */
+        const right = rightCol[i];
+        if (right) {
+          pdf.setFontSize(9).setTextColor(30);
+          pdf.text(String(globalIndex), W / 2 + 2, rowY);
+          pdf.text(
+            pdf.splitTextToSize(right.name, (W / 2) - M - 30),
+            W / 2 + 16,
+            rowY
+          );
+          pdf.setFontSize(8).setTextColor(120);
+          pdf.text(right.unit, W / 2 + 16, rowY + 4);
+          pdf.setFontSize(9).setTextColor(30);
+          pdf.text(String(right.qty), W - M - 2, rowY, { align: "right" });
+          globalIndex++;
+        }
+
+        y += ROW_H;
+      }
+
+      itemCursor += itemsPerPage;
+      page++;
+    }
+  }
+
+ else {
 
     // Column titles (slightly bolder feel)
     const headerY = y + 1.5; // subtle vertical centering
