@@ -18,6 +18,11 @@ type DeliveryItem = {
   qty: number;
   unit: string;
 };
+interface SiteInfo {
+  name: string;
+  line1: string;
+  line2: string;
+}
 
 
 export async function GET(req: Request) {
@@ -235,33 +240,57 @@ export async function GET(req: Request) {
     const FIRST_PAGE_TOP_Y = 70;
     const OTHER_PAGE_TOP_Y = 20;
     const BOTTOM_MARGIN = 20;
-    const HEADER_BAR_H = 10;
-
     function getRowsPerPage(topY: number) {
       return Math.floor((H - topY - BOTTOM_MARGIN) / ROW_H);
     }
 
     /* ================= PAGE HEADER ================= */
-    function drawPageHeader(page: number, delivery: string) {
-      const headerTop = 4;
+    function drawPageHeader(page: number, delivery: string, site: SiteInfo, deliverydate: string) {
+      const headerTop = 6;
+      const headerHeight = 18;
 
-      // subtle header separator
-      pdf.setDrawColor(210);
-      pdf.line(M, headerTop + HEADER_BAR_H, W - M, headerTop + HEADER_BAR_H);
+      /* ===== Bottom Divider ===== */
+      pdf.setDrawColor(200);
+      pdf.line(M, headerTop + headerHeight - 6, W - M, headerTop + headerHeight - 6);
 
-      // Left: document info
+      /* ===== Left Block: Site + Title ===== */
+      pdf.setFontSize(14).setTextColor(40);
+      pdf.text(
+        `BKTK INTL. `,
+        M,
+        headerTop + 6
+      );
+      pdf.setFontSize(9).setTextColor(80);
+      pdf.text(
+        `- Bon de livraison pour ` + deliverydate,
+        M + 28,
+        headerTop + 5.5
+      );
+
+      pdf.text(
+        `${site.name}`,
+        W-M-14,
+        headerTop + 9,
+        { align: "right" }
+      );
+      /* ===== Right Block: Delivery Ref + Page ===== */
       pdf.setFontSize(9).setTextColor(60);
-      pdf.text("Delivery Items", M, headerTop + 6);
+      pdf.text(
+        `Ref: ${safe(delivery)}`,
+        W - M,
+        headerTop + 4,
+        { align: "right" }
+      );
 
-      // Right: ref + page
       pdf.setFontSize(8).setTextColor(120);
       pdf.text(
-        `Ref: ${safe(delivery)}   Page ${page + 1}`,
+        `Page ${page + 1}`,
         W - M,
-        headerTop + 6,
+        headerTop + 9,
         { align: "right" }
       );
     }
+
 
     /* ================= TABLE HEADER ================= */
     function drawTableHeader() {
@@ -295,7 +324,8 @@ export async function GET(req: Request) {
       const ROWS_PER_PAGE = getRowsPerPage(TOP_Y);
       const itemsPerPage = ROWS_PER_PAGE * 2;
       if (page > 0) pdf.addPage();
-      if(!isFirstPage) drawPageHeader(page, delivery.ref);
+      const site = getSiteHeader(delivery.site?.slug);
+      if(site && !isFirstPage) drawPageHeader(page, delivery.ref, site, delivery.date);
       
 
       y = TOP_Y;
