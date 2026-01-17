@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardHeader,
@@ -236,7 +237,51 @@ export default function DeliveriesClient({
 
   /* LOADING STATE ----------------------------------------------------- */
   if (!isLoaded || !user) {
-    return <div className="p-10 text-neutral-500">Vérification…</div>;
+return(<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-4 animate-in fade-in-0">
+        <div className="p-6 w-full space-y-6">
+          {/* Title skeleton */}
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-10 w-10 text-sm rounded-md flex items-center justify-center">
+              BKTK
+            </Skeleton>
+            <Skeleton className="h-8 w-68 rounded-md flex p-2 items-center">
+              Verifying your workspace…
+            </Skeleton>
+          </div>
+
+          {/* Main card skeleton */}
+          <div className="rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm p-6 space-y-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+          </div>
+
+          {/* Grid skeletons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+
+            <div className="rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+
+            <div className="rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm p-4 space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+        </div>
+      </div>
+</div>);
   }
 
   /* RENDER ------------------------------------------------------------ */
