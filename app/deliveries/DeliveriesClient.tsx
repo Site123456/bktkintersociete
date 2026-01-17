@@ -159,11 +159,11 @@ export default function DeliveriesClient({
       
   /* DATE FILTER ----------------------------------------------------- */
   const dateParam = searchParams.get("date");
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterday = d.toISOString().slice(0, 10);
 
-  // Default = today (YYYY-MM-DD)
-  const today = new Date().toISOString().slice(0, 10);
-
-  const selectedDate = dateParam || today;
+  const selectedDate = dateParam || yesterday;
 
   function changeDate(date: string) {
     const params = new URLSearchParams(searchParams.toString());
