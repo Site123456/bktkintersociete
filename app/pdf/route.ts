@@ -122,7 +122,7 @@ export async function GET(req: Request) {
     pdf.text(`Expedition date / Date d'envoi`, 82, 48, {
       align: "left",
     });
-    pdf.roundedRect(70, 44, 90, 20, 1.2, 1.2);
+    pdf.roundedRect(78, 44, 90, 20, 1.2, 1.2);
     pdf.setFontSize(8).setTextColor(100);
     pdf.text(`${safe(delivery.signedBy)}`, mid, top + 7, {
       align: "right",
