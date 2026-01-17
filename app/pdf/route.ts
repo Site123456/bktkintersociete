@@ -80,50 +80,30 @@ export async function GET(req: Request) {
     const top = 30;
 
     pdf.setFontSize(6).setTextColor(20);
-    pdf.text(`Encripted zone, do not write in this zone`, 84, top);
     const boxWidth = 0.8;
     const boxHeight = 0.8;
-    let x = 126;
+    let x = 82;
     for (let i = 0; i < id.length; i++) {
         const shade = Math.floor(Math.random() * 151) + 50;
         pdf.setFillColor(shade, shade, shade);
 
-        pdf.roundedRect(x, top - boxHeight + 0.8, boxWidth, boxHeight, 0.4, 0.4, "F");
+        pdf.roundedRect(x, top - boxHeight + 7.8, boxWidth, boxHeight, 0.4, 0.4, "F");
 
         x += boxWidth + 0.5;
     }
-    x = 126.2;
+    x = 82.2;
     pdf.setFontSize(2).setTextColor(20);
     for (let i = 0; i < id.length; i++) {
-        pdf.text(id[i], x, 29.5);
+        pdf.text(id[i], x, 36.5);
         x += 1.3;
-    }
-    x = 126;
-    for (let i = 0; i < id.length; i++) {
-        const shade = Math.floor(Math.random() * 151) + 50;
-        pdf.setFillColor(shade, shade, shade);
-
-        pdf.roundedRect(x, top - boxHeight + 2, boxWidth, boxHeight, 0.4, 0.4, "F");
-
-        x += boxWidth + 0.5;
-    }
-    x = 126;
-    for (let i = 0; i < id.length; i++) {
-        // Set solid black color
-        const shade = Math.floor(Math.random() * 151) + 100;
-        pdf.setFillColor(shade, shade, shade); // RGB random dark gray
-
-        pdf.roundedRect(x, top - boxHeight + 3.2, boxWidth, boxHeight, 0.4, 0.4, "F");
-
-        x += boxWidth + 0.5; // move to next box
     }
 
 
     pdf.setFontSize(9).setTextColor(40);
 
     pdf.text(`Fait le : ${safe(delivery.date)}`, M, top + 2);
-    pdf.setFontSize(20).setTextColor(200);
-    pdf.text(`${safe(delivery.username).toUpperCase().slice(0, 8)}`, 82, top + 6, {
+    pdf.setFontSize(18).setTextColor(200);
+    pdf.text(`${safe(delivery.username).toUpperCase().slice(0, 20)}`, 82, top + 4, {
       align: "left",
     });
     pdf.setFontSize(8).setTextColor(0);
