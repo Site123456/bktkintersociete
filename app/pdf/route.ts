@@ -134,11 +134,11 @@ export async function GET(req: Request) {
       align: "left",
     });
     pdf.roundedRect(70, 44, 90, 20, 1.2, 1.2);
-    pdf.setFontSize(9).setTextColor(100);
+    pdf.setFontSize(8).setTextColor(100);
     pdf.text(`${safe(delivery.signedBy)}`, mid, top + 7, {
       align: "right",
     });
-    pdf.setTextColor(40);
+    pdf.setFontSize(9).setTextColor(40);
     pdf.text(
       `Demandée pour : ${safe(delivery.requestedDeliveryDate)}`,
       M,
