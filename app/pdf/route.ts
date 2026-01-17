@@ -87,15 +87,24 @@ export async function GET(req: Request) {
         const shade = Math.floor(Math.random() * 151) + 50;
         pdf.setFillColor(shade, shade, shade);
 
-        pdf.roundedRect(x, top - boxHeight + 7.8, boxWidth, boxHeight, 0.4, 0.4, "F");
+        pdf.roundedRect(x, top - boxHeight + 6, boxWidth, boxHeight, 0.4, 0.4, "F");
 
         x += boxWidth + 0.5;
     }
     x = 82.2;
     pdf.setFontSize(2).setTextColor(20);
     for (let i = 0; i < id.length; i++) {
-        pdf.text(id[i], x, 36.5);
+        pdf.text(id[i], x, 36.8);
         x += 1.3;
+    }
+    x = 82;
+    for (let i = 0; i < id.length; i++) {
+        const shade = Math.floor(Math.random() * 151) + 50;
+        pdf.setFillColor(shade, shade, shade);
+
+        pdf.roundedRect(x, top - boxHeight + 7.8, boxWidth, boxHeight, 0.4, 0.4, "F");
+
+        x += boxWidth + 0.5;
     }
 
 
