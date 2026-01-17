@@ -233,7 +233,7 @@ export async function GET(req: Request) {
   if (delivery.items.length > 20) {
     const ROW_H = 12;
     const FIRST_PAGE_TOP_Y = 70;
-    const OTHER_PAGE_TOP_Y = 14;
+    const OTHER_PAGE_TOP_Y = 20;
     const BOTTOM_MARGIN = 20;
     const HEADER_BAR_H = 10;
 
@@ -243,7 +243,7 @@ export async function GET(req: Request) {
 
     /* ================= PAGE HEADER ================= */
     function drawPageHeader(page: number, delivery: string) {
-      const headerTop = 8;
+      const headerTop = 4;
 
       // subtle header separator
       pdf.setDrawColor(210);
@@ -279,7 +279,7 @@ export async function GET(req: Request) {
 
       y += 6;
       pdf.setDrawColor(180);
-      pdf.line(M, y - 2, W - M, y);
+      pdf.line(M, y, W - M, y);
       y += 2;
     }
 
@@ -294,10 +294,9 @@ export async function GET(req: Request) {
       const TOP_Y = isFirstPage ? FIRST_PAGE_TOP_Y : OTHER_PAGE_TOP_Y;
       const ROWS_PER_PAGE = getRowsPerPage(TOP_Y);
       const itemsPerPage = ROWS_PER_PAGE * 2;
-
       if (page > 0) pdf.addPage();
-
-      drawPageHeader(page, delivery.ref);
+      if(!isFirstPage) drawPageHeader(page, delivery.ref);
+      
 
       y = TOP_Y;
       drawTableHeader();
@@ -323,7 +322,8 @@ export async function GET(req: Request) {
         }
 
         pdf.setDrawColor(200);
-        pdf.line(W / 2, y - 1, W / 2, y - 1 + ROW_H);
+        pdf.line(116, y - 14, 116, y - 3 + ROW_H);
+        pdf.line(W / 2, y - 14, W / 2, y - 3 + ROW_H);
 
         /* LEFT */
         const left = leftCol[i];
