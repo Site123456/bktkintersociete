@@ -123,7 +123,7 @@ export async function GET(req: Request) {
 
     pdf.text(`Fait le : ${safe(delivery.date)}`, M, top + 2);
     pdf.setFontSize(20).setTextColor(200);
-    pdf.text(`${safe(delivery.username).toUpperCase()}`, 82, top + 6, {
+    pdf.text(`${safe(delivery.username).toUpperCase().slice(0, 8)}`, 82, top + 6, {
       align: "left",
     });
     pdf.setFontSize(8).setTextColor(0);
