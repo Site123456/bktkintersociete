@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   /* ================= QR ================= */
 
   const qrDataUrl = await QRCode.toDataURL(
-    `https://bktkintersociete.vercel.app/pdf?id=${id}`,
+    `https://bktk.indian-nepaliswad.fr/pdf?id=${id}`,
     { margin: 0, width: 160 }
   );
 
@@ -134,7 +134,7 @@ export async function GET(req: Request) {
       top + 6
     );
     pdf.setFontSize(8);
-    pdf.text(`https://bktkintersociete.vercel.app/pdf?id=${id}`, mid, top + 12, {
+    pdf.text(`https://bktk.indian-nepaliswad.fr/pdf?id=${id}`, mid, top + 12, {
       align: "right",
     });
 
