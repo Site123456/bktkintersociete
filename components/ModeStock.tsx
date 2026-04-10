@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Send, ClipboardList, Plus, Minus, Trash2, Search as SearchIcon, GripVertical, Package } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Send, ClipboardList, Plus, Minus, Trash2, Search as SearchIcon, GripVertical, Package, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import BottomProductBar from "@/components/BottomProductBar";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Produit { uniquename: string; typedequantite: string; }
 type Line = { id: string; name: string; qty: number; unit: string; original_qty: number; }
@@ -14,11 +15,18 @@ const createId = () => `${Date.now().toString(36)}-${Math.random().toString(36).
 export default function ModeStock({ selectedSite, produits }: { selectedSite: any, produits: Produit[] }) {
   const router = useRouter();
   const { user } = useUser();
-  
+
   const [lines, setLines] = useState<Line[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 100);
+  };
+
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -54,21 +62,22 @@ export default function ModeStock({ selectedSite, produits }: { selectedSite: an
   }, [search]);
 
   const addProduct = (p: Produit) => {
-    // If it exists, don't duplicate, just scroll to it or ignore? Or just add. Let's just add it.
     setLines(prev => [...prev, { id: createId(), name: p.uniquename, qty: 1, unit: p.typedequantite ?? "", original_qty: 0 }]);
     setSearch(""); setShowDropdown(false);
+    scrollToBottom();
   };
 
   const addNewProduct = async (name: string) => {
     setLines(prev => [...prev, { id: createId(), name, qty: 1, unit: "Pièce", original_qty: 0 }]);
     setSearch(""); setShowDropdown(false);
+    scrollToBottom();
     try {
       await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, unit: "Pièce" })
       });
-    } catch(e) {}
+    } catch (e) { }
   };
 
   const updateQty = (id: string, qty: number) => {
@@ -120,8 +129,8 @@ export default function ModeStock({ selectedSite, produits }: { selectedSite: an
   if (fetching) {
     return (
       <div className="flex flex-col items-center justify-center py-20 opacity-60 animate-pulse">
-        <ClipboardList className="h-10 w-10 text-primary mb-2" />
-        <p className="font-semibold text-sm">Chargement du récapitulatif...</p>
+        <ClipboardList className="h-12 w-12 text-primary/50 mb-3" />
+        <p className="font-bold text-sm tracking-tight">Chargement du récapitulatif...</p>
       </div>
     );
   }
@@ -140,29 +149,43 @@ export default function ModeStock({ selectedSite, produits }: { selectedSite: an
         </div>
       </div>
 
-      <div className="sticky top-0 z-40 w-full bg-background/85 backdrop-blur-2xl py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="sticky top-12 sm:top-14 z-40 w-full bg-background/95 backdrop-blur-2xl py-2 sm:py-2.5 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-border/20">
         <div className="relative group">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition" size={18} />
+          <SearchIcon className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-primary/60 group-focus-within:text-primary transition-all duration-300" size={16} />
           <input type="text" value={search} onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)} onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-            placeholder="Rechercher ou ajouter un produit additionnel..."
-            className="w-full pl-11 pr-4 py-4 rounded-2xl border bg-background/80 backdrop-blur-md focus:bg-background focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition text-base shadow-sm font-medium"
+            placeholder="Rechercher un produit additionnel..."
+            className="w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 rounded-xl border border-primary/10 bg-card/30 backdrop-blur-md focus:bg-background/80 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 outline-none transition-all duration-300 text-sm shadow-md font-medium placeholder:text-muted-foreground/40"
           />
+          {search && (
+            <button onClick={() => { setSearch(""); setShowDropdown(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/80 rounded-md transition shadow-sm">
+              <X size={14} className="text-foreground/60" />
+            </button>
+          )}
         </div>
 
-        {showDropdown && search.length > 0 && (
-          <ul className="absolute w-full mt-2 bg-card border rounded-2xl shadow-2xl max-h-64 overflow-auto animate-in fade-in slide-in-from-top-2 z-50 py-2">
-            {filteredItems.map((p, i) => (
-              <li key={i} onClick={() => addProduct(p)} className="px-4 py-3 cursor-pointer hover:bg-muted/60 transition flex justify-between items-center group">
-                <span className="font-semibold text-sm group-hover:text-primary transition">{p.uniquename}</span>
-                <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-md">{p.typedequantite}</span>
+        <AnimatePresence>
+          {showDropdown && search.length > 0 && (
+            <motion.ul
+              initial={{ opacity: 0, y: -4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 right-0 mt-1.5 bg-card/98 backdrop-blur-xl border border-border/50 rounded-xl sm:rounded-2xl shadow-2xl max-h-56 sm:max-h-72 overflow-auto z-50 py-1"
+            >
+              {filteredItems.length === 0 && (
+                <li className="px-3.5 py-3 text-sm text-muted-foreground text-center">Aucun résultat</li>
+              )}
+              {filteredItems.slice(0, 12).map((p, i) => (
+                <li key={i} onMouseDown={(e) => { e.preventDefault(); addProduct(p); }} className="px-3 py-2 sm:py-2.5 mx-1 cursor-pointer hover:bg-primary/5 active:bg-primary/10 transition rounded-lg flex justify-between items-center group">
+                  <span className="font-semibold text-xs sm:text-sm group-hover:text-primary transition truncate">{p.uniquename}</span>
+                  <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-muted rounded font-bold shrink-0 ml-2">{p.typedequantite}</span>
+                </li>
+              ))}
+              <li onMouseDown={(e) => { e.preventDefault(); addNewProduct(search); }} className="px-3 py-2.5 mx-1 cursor-pointer hover:bg-primary/10 active:bg-primary/15 transition font-bold text-primary text-xs sm:text-sm flex gap-1.5 items-center border-t border-border/30 mt-1 rounded-lg">
+                <Plus size={13} /> Ajouter &quot;{search}&quot;
               </li>
-            ))}
-            <li onClick={() => addNewProduct(search)} className="px-4 py-3 cursor-pointer hover:bg-primary/10 transition font-semibold text-primary text-sm flex gap-2 items-center">
-              <Plus size={16} /> Ajouter "{search}"
-            </li>
-          </ul>
-        )}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="space-y-3">
@@ -175,7 +198,7 @@ export default function ModeStock({ selectedSite, produits }: { selectedSite: an
                 <input value={l.name} onChange={(e) => setLines(prev => prev.map(item => item.id === l.id ? { ...item, name: e.target.value } : item))} className="text-lg font-bold bg-transparent border-none focus:ring-0 outline-none w-full p-0 text-foreground" placeholder="Nom" />
                 <div className="flex items-center gap-2">
                   <input value={l.unit} placeholder="Unité" onChange={(e) => setLines(prev => prev.map(item => item.id === l.id ? { ...item, unit: e.target.value } : item))} className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md border-none focus:ring-0 outline-none w-24 p-0" />
-                  {l.original_qty > 0 && <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 bg-primary/10 px-2 py-1 rounded-md flex items-center gap-1"><Package size={10}/> Reçu: {l.original_qty}</span>}
+                  {l.original_qty > 0 && <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 bg-primary/10 px-2 py-1 rounded-md flex items-center gap-1"><Package size={10} /> Reçu: {l.original_qty}</span>}
                 </div>
               </div>
             </div>
@@ -195,12 +218,13 @@ export default function ModeStock({ selectedSite, produits }: { selectedSite: an
             <p className="text-sm text-foreground/60 mt-1 max-w-sm">Vous n'avez passé aucune commande pour ce site ce mois-ci. Ajoutez des produits manuellement ci-dessus.</p>
           </div>
         )}
+        <div ref={bottomRef} className="h-1" />
       </div>
 
       <BottomProductBar onAdd={addProduct} produits={produits} />
 
       <div className="fixed inset-x-0 bottom-0 p-4 bg-background/90 backdrop-blur-xl border-t z-40 sm:hidden pb-safe">
-         <button onClick={generatePDF} disabled={loading} className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 transition-all shadow-xl shadow-primary/30 active:scale-95">
+        <button onClick={generatePDF} disabled={loading} className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 transition-all shadow-xl shadow-primary/30 active:scale-95">
           <Send className="h-6 w-6" />
           {loading ? "Création du PDF..." : "Générer l'État des Stocks"}
         </button>
