@@ -23,6 +23,7 @@ import {
   Clock,
   CheckCircle2,
   Archive,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -91,9 +92,9 @@ function ModeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="rounded-xl hover:bg-accent/60 h-10 w-10">
-      <Sun className="h-5 w-5 dark:hidden" />
-      <Moon className="hidden h-5 w-5 dark:block" />
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="rounded-lg sm:rounded-xl hover:bg-accent/60 h-8 w-8 sm:h-9 sm:w-9">
+      <Sun className="h-4 w-4 sm:h-5 sm:w-5 dark:hidden" />
+      <Moon className="hidden h-4 w-4 sm:h-5 sm:w-5 dark:block" />
     </Button>
   );
 }
