@@ -33,13 +33,13 @@ type Delivery = {
 };
 
 const FALLBACK_SITES: Site[] = [
-  { slug: "BKTK01", name: "Paris 15", line1: "", line2: "" },
-  { slug: "BKTK02", name: "Bordeaux", line1: "", line2: "" },
-  { slug: "BKTK03", name: "Courbevoie", line1: "", line2: "" },
-  { slug: "BKTK04", name: "Saint-Ouen", line1: "", line2: "" },
-  { slug: "BKTK05", name: "Bagneux", line1: "", line2: "" },
-  { slug: "BKTK06", name: "Ivry", line1: "", line2: "" },
-  { slug: "BKTK07", name: "AFS", line1: "", line2: "" },
+  { slug: "BKTK01", name: "INS Paris 15", line1: "", line2: "" },
+  { slug: "BKTK02", name: "INS Bordeaux", line1: "", line2: "" },
+  { slug: "BKTK03", name: "INS Courbevoie", line1: "", line2: "" },
+  { slug: "BKTK04", name: "INS Saint-Ouen", line1: "", line2: "" },
+  { slug: "BKTK05", name: "INS Bagneux", line1: "", line2: "" },
+  { slug: "BKTK06", name: "INS Ivry", line1: "", line2: "" },
+  { slug: "BKTK07", name: "INS Aubervilliers", line1: "", line2: "" },
   { slug: "BKTK08", name: "Koseli Buffet", line1: "", line2: "" },
 ];
 

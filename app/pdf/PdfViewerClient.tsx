@@ -104,14 +104,14 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
       </main>
 
       {/* FLOATING ACTION PANEL (MINIMIZABLE) */}
-      <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 z-50 flex flex-col items-end gap-3 pointer-events-none">
+      <div className="absolute inset-x-4 bottom-4 sm:inset-auto sm:bottom-8 sm:right-8 z-50 flex flex-col items-center sm:items-end gap-3 pointer-events-none">
         <AnimatePresence>
           {!isMinimized && (
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-black/60 backdrop-blur-2xl border border-white/20 p-5 sm:p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-[280px] sm:w-[320px] pointer-events-auto overflow-hidden relative"
+              className="bg-black/80 backdrop-blur-2xl border border-white/20 p-5 sm:p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-full max-w-[320px] pointer-events-auto overflow-hidden relative mx-auto sm:mx-0"
             >
               {/* Subtle background glow */}
               <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 bg-primary/20 blur-[50px] rounded-full pointer-events-none"></div>
@@ -172,7 +172,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
         <motion.button
           layout
           onClick={() => setIsMinimized(!isMinimized)}
-          className={`h-14 w-14 sm:h-16 sm:w-16 rounded-[2rem] bg-black/60 backdrop-blur-xl border border-white/20 pointer-events-auto flex items-center justify-center text-white shadow-2xl transition-all hover:border-primary/50 group ${isMinimized ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"}`}
+          className={`h-14 w-14 sm:h-16 sm:w-16 rounded-[2rem] bg-black/80 backdrop-blur-xl border border-white/20 pointer-events-auto flex items-center justify-center text-white shadow-2xl transition-all hover:border-primary/50 group ${isMinimized ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"} ${isMinimized && !isMinimized ? "relative" : "ml-auto sm:ml-0"}`}
         >
           {isMinimized ? (
             <div className="relative">
