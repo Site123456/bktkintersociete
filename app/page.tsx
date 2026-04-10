@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import Link from 'next/link';
@@ -47,7 +47,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { motion, AnimatePresence } from "framer-motion";
 
 import produitsRaw from "@/data/produits.json"
-import { Plus, Minus, Trash2, Search as SearchIcon } from "lucide-react"
+import { Plus, Minus, Trash2, Search as SearchIcon, X } from "lucide-react"
 import ModeStock from "@/components/ModeStock";
 
 import BottomProductBar from "@/components/BottomProductBar";
@@ -114,6 +114,13 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
   const [date, setDate] = useState(tomorrow());
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 100);
+  };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -123,11 +130,13 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
   const addProduct = (p: Produit) => {
     setLines(prev => [...prev, { id: createId(), name: p.uniquename, qty: 1, unit: p.typedequantite ?? "" }]);
     setSearch(""); setShowDropdown(false);
+    scrollToBottom();
   };
 
   const addNewProduct = async (name: string) => {
     setLines(prev => [...prev, { id: createId(), name, qty: 1, unit: "Pièce" }]);
     setSearch(""); setShowDropdown(false);
+    scrollToBottom();
     try {
       await fetch("/api/products", {
         method: "POST",
@@ -191,15 +200,15 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
       {/* Sticky search bar */}
       <div className="sticky top-12 sm:top-14 z-40 w-full bg-background/95 backdrop-blur-2xl py-2 sm:py-2.5 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="relative group">
-          <SearchIcon className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={15} />
+          <SearchIcon className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-primary/60 group-focus-within:text-primary transition-all duration-300" size={16} />
           <input type="text" value={search} onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)} onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-            placeholder="Ajouter un produit..."
-            className="w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm focus:bg-background focus:ring-2 focus:ring-primary/30 focus:border-primary/20 outline-none transition-all text-sm shadow-sm font-medium placeholder:text-muted-foreground/60"
+            placeholder="Rechercher un produit..."
+            className="w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 rounded-xl border border-primary/10 bg-card/30 backdrop-blur-md focus:bg-background/80 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 outline-none transition-all duration-300 text-sm shadow-md font-medium placeholder:text-muted-foreground/40"
           />
           {search && (
-            <button onClick={() => { setSearch(""); setShowDropdown(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-md transition">
-              <Trash2 size={12} className="text-muted-foreground" />
+            <button onClick={() => { setSearch(""); setShowDropdown(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/80 rounded-md transition shadow-sm">
+              <X size={14} className="text-foreground/60" />
             </button>
           )}
         </div>
@@ -278,6 +287,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
             <p className="text-xs sm:text-sm text-muted-foreground/60 mt-1 max-w-[250px] leading-relaxed">Ajoutez des produits via la barre de recherche ou le menu rapide.</p>
           </motion.div>
         )}
+        <div ref={bottomRef} className="h-1" />
       </div>
 
       <BottomProductBar onAdd={addProduct} produits={produits} />
