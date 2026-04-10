@@ -171,7 +171,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
       </main>
 
       {/* FLOATING CONTROL HUD (ZOOM + ACTIONS) */}
-      <div className="absolute bottom-6 inset-x-4 sm:inset-x-auto sm:right-8 sm:bottom-8 z-50 flex flex-col items-center sm:items-end gap-3 pointer-events-none">
+      <div className="absolute bottom-6 inset-x-4 sm:inset-x-auto sm:right-8 sm:bottom-8 z-50 flex flex-col items-center sm:items-end gap-3 pointer-events-none print:hidden">
         
         {/* Zoom Controls Overlay */}
         <AnimatePresence>
@@ -229,7 +229,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
                     </div>
                     <div>
                       <h2 className="text-white font-black text-sm uppercase tracking-tight">Accès Rapide</h2>
-                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Partager le document</p>
+                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Options du document</p>
                     </div>
                   </div>
                   <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition group-hover:bg-white/10">
@@ -254,20 +254,28 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
                       <Share2 size={14} /> Partager
                     </button>
                     <button 
-                      onClick={handleCopy}
+                      onClick={() => window.print()}
                       className="h-12 bg-white/5 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition-all border border-white/10"
+                    >
+                      Imprimer
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button 
+                      onClick={handleCopy}
+                      className="h-12 bg-white/5 text-white/70 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all border border-white/5"
                     >
                       {copied ? <CheckCircle2 size={14} className="text-green-400" /> : <Copy size={14} />}
                       {copied ? "Lien OK" : "Copier"}
                     </button>
+                    <a 
+                      href={pdfUrl}
+                      download={`BKTK-${id.slice(0,6)}.pdf`}
+                      className="h-12 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all border border-white/5"
+                    >
+                      <Download size={14} /> PDF
+                    </a>
                   </div>
-                  <a 
-                    href={pdfUrl}
-                    download={`BKTK-${id.slice(0,6)}.pdf`}
-                    className="h-12 w-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all border border-white/5"
-                  >
-                    <Download size={14} /> Télécharger
-                  </a>
                 </div>
               </div>
             </motion.div>
@@ -288,6 +296,47 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
         </motion.button>
       </div>
 
+      <style jsx global>{`
+        @media print {
+          body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          header, 
+          .print\:hidden,
+          [class*="absolute bottom-"],
+          [class*="pointer-events-none"] {
+            display: none !important;
+          }
+          main {
+            background: white !important;
+            position: relative !important;
+            overflow: visible !important;
+            display: block !important;
+            height: auto !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .react-pdf__Page {
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-after: always !important;
+            box-shadow: none !important;
+            border: none !important;
+            transform: none !important;
+          }
+          .react-pdf__Document {
+            display: block !important;
+            width: 100% !important;
+          }
+           canvas {
+            width: 100% !important;
+            height: auto !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
