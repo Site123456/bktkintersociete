@@ -2,9 +2,22 @@
 
 import { useEffect, useState, useRef } from "react";
 import {
-  Download, Share2, Copy, CheckCircle2, ChevronLeft, ScanLine,
-  X, Minimize2, ExternalLink, ZoomIn, ZoomOut,
-  RotateCcw, Hand, MousePointer2
+  Download,
+  Share2,
+  Copy,
+  CheckCircle2,
+  ChevronLeft,
+  ScanLine,
+  X,
+  Minimize2,
+  ExternalLink,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Hand,
+  MousePointer2,
+  Printer,
+  ChevronUp
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,7 +55,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
   };
 
   const handleZoom = (delta: number) => {
-    setScale(prev => Math.min(Math.max(0.5, prev + delta), 3.0));
+    setScale((prev) => Math.min(Math.max(0.4, prev + delta), 2.5));
   };
 
   const resetZoom = () => setScale(1.0);
@@ -57,7 +70,11 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        try { document.execCommand('copy'); } catch (err) { console.error(err); }
+        try {
+          document.execCommand("copy");
+        } catch (err) {
+          console.error(err);
+        }
         document.body.removeChild(textArea);
       }
       setCopied(true);
@@ -75,225 +92,194 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
           text: "Voici le document de commande / stock de BKTK.",
           url: shareUrl,
         });
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     } else {
       handleCopy();
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-[#070707] flex flex-col overflow-hidden">
-
-      {/* IMMERSIVE HEADER */}
+    <div className="fixed inset-0 bg-[#050505] flex flex-col overflow-hidden text-white font-sans selection:bg-primary/30">
+      {/* PROFESSIONAL TOP HEADER */}
       <motion.header
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="absolute top-0 inset-x-0 h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 bg-gradient-to-b from-black/95 to-transparent z-50 pointer-events-none"
+        className="absolute top-0 inset-x-0 h-14 border-b border-white/5 bg-black/40 backdrop-blur-2xl z-50 px-4 flex items-center justify-between print:hidden"
       >
-        <div className="flex items-center gap-3 pointer-events-auto">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/")}
-            className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center bg-white/5 backdrop-blur-xl rounded-xl text-white hover:bg-white/10 transition-all border border-white/10"
+            className="h-9 px-3 flex items-center gap-2 bg-white/5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition border border-white/5 active:scale-95"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={16} />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Retour</span>
           </button>
+          <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex flex-col">
-            <h1 className="text-white text-[10px] sm:text-[11px] font-black tracking-[0.2em] uppercase opacity-60">Operations Portal</h1>
-            <span className="text-white text-xs sm:text-sm font-bold tracking-tight">Doc ID: {id.slice(0, 12)}...</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary leading-none mb-1">Interactive Viewer</span>
+            <span className="text-xs font-bold tracking-tight opacity-40 truncate max-w-[150px] sm:max-w-none">Ref: {id}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="hidden sm:flex items-center bg-white/5 backdrop-blur-md rounded-xl p-1 border border-white/5 mr-4">
+        <div className="flex items-center gap-2">
+          <div className="bg-white/5 rounded-lg p-0.5 border border-white/5 flex items-center">
             <button
               onClick={() => setDragMode(false)}
-              className={`h-8 w-8 flex items-center justify-center rounded-lg transition ${!dragMode ? 'bg-primary text-primary-foreground shadow-lg' : 'text-white/40 hover:text-white'}`}
-              title="Sélection"
+              className={`h-8 px-3 rounded-md flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider transition ${!dragMode ? "bg-primary text-white shadow-lg" : "text-white/40 hover:text-white"}`}
             >
-              <MousePointer2 size={16} />
+              <MousePointer2 size={12} /> <span className="hidden sm:inline">Pointeur</span>
             </button>
             <button
               onClick={() => setDragMode(true)}
-              className={`h-8 w-8 flex items-center justify-center rounded-lg transition ${dragMode ? 'bg-primary text-primary-foreground shadow-lg' : 'text-white/40 hover:text-white'}`}
-              title="Main (Drag)"
+              className={`h-8 px-3 rounded-md flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider transition ${dragMode ? "bg-primary text-white shadow-lg" : "text-white/40 hover:text-white"}`}
             >
-              <Hand size={16} />
+              <Hand size={12} /> <span className="hidden sm:inline">Main</span>
             </button>
           </div>
           <a
-            href={pdfUrl} target="_blank"
-            className="h-9 px-3 sm:px-4 bg-primary text-primary-foreground rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+            href={pdfUrl}
+            target="_blank"
+            className="h-9 px-4 bg-white/5 hover:bg-white/10 rounded-lg flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition border border-white/5"
           >
-            <ExternalLink size={14} /> <span className="hidden sm:inline">PDF Natif</span>
+            <ExternalLink size={14} /> <span className="hidden sm:inline">Natif</span>
           </a>
         </div>
       </motion.header>
 
-      {/* INTERACTIVE PDF VIEWPORT */}
+      {/* DOCUMENT ENGINE */}
       <main
         ref={containerRef}
-        className={`flex-1 w-full bg-[#070707] relative flex justify-center overflow-auto no-scrollbar scroll-smooth ${dragMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+        className={`flex-1 w-full bg-[#050505] relative flex justify-center overflow-auto no-scrollbar scroll-smooth transition-all duration-300 ${dragMode ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
       >
-        <div className="min-h-full py-16 sm:py-20 flex flex-col items-center">
+        <div className="min-h-full py-24 sm:py-32 flex flex-col items-center">
           {pdfUrl ? (
             <Document
               file={pdfUrl}
               onLoadSuccess={onDocumentLoadSuccess}
               loading={
-                <div className="flex flex-col items-center gap-3 py-40 opacity-40">
-                  <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-white text-[10px] font-black tracking-widest uppercase">Chargement...</p>
+                <div className="flex flex-col items-center gap-4 py-40">
+                  <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-[10px] font-black tracking-widest uppercase opacity-40">Initialisation du moteur...</p>
                 </div>
               }
-              error={<p className="text-white/50 text-sm font-bold p-20">Erreur d'affichage.</p>}
+              error={<div className="text-white/30 text-xs font-black p-20 uppercase tracking-widest">Document non disponible</div>}
             >
-              {Array.from(new Array(numPages), (el, index) => (
-                <motion.div
-                  key={`page_${index + 1}`}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="mb-4 sm:mb-8 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] sm:rounded-sm overflow-hidden border-b sm:border border-white/5"
-                  style={{ transformOrigin: "top center", scale }}
-                >
-                  <Page
-                    pageNumber={index + 1}
-                    width={typeof window !== 'undefined' ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.85, 1200)) : 800}
-                    loading={<div className="bg-white/5 h-[600px] w-full animate-pulse"></div>}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </motion.div>
-              ))}
+              <AnimatePresence>
+                {Array.from(new Array(numPages), (el, index) => (
+                  <motion.div
+                    key={`page_${index + 1}`}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    className="mb-10 sm:mb-16 last:mb-0 shadow-[0_45px_100px_-20px_rgba(0,0,0,0.9)] border border-white/5"
+                    style={{ transformOrigin: "top center", scale }}
+                  >
+                    <Page
+                      pageNumber={index + 1}
+                      width={typeof window !== "undefined" ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.8, 1100)) : 800}
+                      className="transition-transform duration-300"
+                      loading={<div className="bg-white/2 h-[800px] w-full animate-pulse blur-xl"></div>}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </Document>
           ) : null}
         </div>
       </main>
 
-      {/* FLOATING CONTROL HUD (ZOOM + ACTIONS) */}
-      <div className="absolute bottom-6 inset-x-4 sm:inset-x-auto sm:right-8 sm:bottom-8 z-50 flex flex-col items-center sm:items-end gap-3 pointer-events-none print:hidden">
-
-        {/* Zoom Controls Overlay */}
+      {/* MINIMAL COMMAND BAR (FIXED BOTTOM) */}
+      <div className="absolute bottom-6 inset-x-0 flex flex-col items-center gap-4 z-50 pointer-events-none print:hidden px-4">
+        {/* ACTION TOOLTIP / SHEET */}
         <AnimatePresence>
           {!isMinimized && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-black/40 backdrop-blur-2xl border border-white/10 p-2 rounded-2xl flex items-center gap-1 shadow-2xl pointer-events-auto mb-2"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="w-full max-w-[360px] bg-black/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-6 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] pointer-events-auto overflow-hidden relative"
             >
-              <button
-                onClick={() => handleZoom(-0.1)}
-                className="h-10 w-10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition"
-                title="Dézoomer"
-              >
-                <ZoomOut size={18} />
-              </button>
-              <div className="px-3 min-w-[60px] text-center">
-                <span className="text-white text-xs font-black tracking-tighter">{Math.round(scale * 100)}%</span>
-              </div>
-              <button
-                onClick={() => handleZoom(0.1)}
-                className="h-10 w-10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition"
-                title="Zoomer"
-              >
-                <ZoomIn size={18} />
-              </button>
-              <div className="w-[1px] h-4 bg-white/10 mx-1"></div>
-              <button
-                onClick={resetZoom}
-                className="h-10 w-10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition"
-                title="Réinitialiser"
-              >
-                <RotateCcw size={16} />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
 
-        <AnimatePresence>
-          {!isMinimized && (
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-black/80 backdrop-blur-3xl border border-white/20 p-5 sm:p-6 rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] w-full max-w-[320px] pointer-events-auto overflow-hidden relative mx-auto sm:mx-0"
-            >
-              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 bg-primary/20 blur-[60px] rounded-full pointer-events-none"></div>
-
-              <div className="relative z-10 space-y-6">
-                <div className="flex items-center justify-between group cursor-pointer" onClick={() => setIsMinimized(true)}>
+              <div className="relative z-10 flex flex-col gap-6">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center text-primary border border-white/5">
-                      <ScanLine size={24} />
+                    <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-primary border border-white/5">
+                      <ScanLine size={20} />
                     </div>
                     <div>
-                      <h2 className="text-white font-black text-sm uppercase tracking-tight">Accès Rapide</h2>
-                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Options du document</p>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-white/90">Code d'accès</h3>
+                      <p className="text-[9px] font-bold text-white/40 uppercase tracking-tight">Scanner pour confirmer</p>
                     </div>
                   </div>
-                  <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition group-hover:bg-white/10">
-                    <Minimize2 size={14} />
-                  </div>
+                  <button onClick={() => setIsMinimized(true)} className="h-8 w-8 rounded-full hover:bg-white/5 flex items-center justify-center text-white/30 transition">
+                    <X size={14} />
+                  </button>
                 </div>
 
-                <div className="p-4 bg-white rounded-[2rem] shadow-2xl flex justify-center w-full max-w-[180px] mx-auto group ring-8 ring-white/5">
-                  <img
-                    src={qrDataUrl}
-                    alt="QR Code"
-                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
-                  />
+                <div className="p-3 bg-white rounded-3xl shadow-inner flex justify-center w-full max-w-[160px] mx-auto group ring-4 ring-white/5">
+                  <img src={qrDataUrl} alt="QR" className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-110" />
                 </div>
 
-                <div className="flex flex-col gap-2.5">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      onClick={handleShare}
-                      className="h-12 bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all"
-                    >
-                      <Share2 size={14} /> Partager
-                    </button>
-                    <button
-                      onClick={() => window.print()}
-                      className="h-12 bg-white/5 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition-all border border-white/10"
-                    >
-                      Imprimer
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      onClick={handleCopy}
-                      className="h-12 bg-white/5 text-white/70 font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all border border-white/5"
-                    >
-                      {copied ? <CheckCircle2 size={14} className="text-green-400" /> : <Copy size={14} />}
-                      {copied ? "Lien OK" : "Copier"}
-                    </button>
-                    <a
-                      href={pdfUrl}
-                      download={`BKTK-${id.slice(0, 6)}.pdf`}
-                      className="h-12 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all border border-white/5"
-                    >
-                      <Download size={14} /> PDF
-                    </a>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={handleShare} className="h-11 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:opacity-90 transition active:scale-95 flex items-center justify-center gap-2">
+                    <Share2 size={12} /> Partager
+                  </button>
+                  <button onClick={handleCopy} className="h-11 bg-white/5 text-white font-black text-[10px] uppercase tracking-widest rounded-xl border border-white/10 hover:bg-white/10 transition flex items-center justify-center gap-2">
+                    {copied ? <CheckCircle2 size={12} className="text-green-400" /> : <Copy size={12} />}
+                    {copied ? "Link OK" : "Copier"}
+                  </button>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <motion.button
-          layout
-          onClick={() => setIsMinimized(!isMinimized)}
-          className={`h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 pointer-events-auto flex items-center justify-center text-white shadow-2xl transition-all hover:border-primary/50 group ${isMinimized ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"} ml-auto sm:ml-0 shadow-primary/10`}
+        {/* THE COMMAND BAR PILL */}
+        <motion.div
+           layout
+           className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-1.5 flex items-center gap-1 shadow-2xl pointer-events-auto ring-1 ring-white/5"
         >
-          {isMinimized ? (
-            <div className="relative">
-              <ScanLine size={20} className="sm:w-6 sm:h-6 group-hover:text-primary transition-colors" />
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-black animate-pulse"></div>
+          <div className="flex items-center bg-white/5 rounded-[0.6rem] p-0.5 mr-1">
+            <button onClick={() => handleZoom(-0.1)} className="h-9 w-9 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition" title="Zoom Out">
+              <ZoomOut size={16} />
+            </button>
+            <div className="min-w-[50px] text-center border-x border-white/5">
+              <span className="text-[10px] font-black tracking-tighter tabular-nums px-2">{Math.round(scale * 100)}%</span>
             </div>
-          ) : <X size={20} />}
-        </motion.button>
+            <button onClick={() => handleZoom(0.1)} className="h-9 w-9 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition" title="Zoom In">
+              <ZoomIn size={16} />
+            </button>
+          </div>
+
+          <button onClick={resetZoom} className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-white/40 hover:text-white hover:bg-white/10 rounded-[0.6rem] transition" title="Reset View">
+            <RotateCcw size={14} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Reset</span>
+          </button>
+
+          <div className="w-[1px] h-4 bg-white/10 mx-1" />
+
+          <button onClick={() => window.print()} className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-white/40 hover:text-primary hover:bg-primary/10 rounded-[0.6rem] transition group" title="Print">
+            <Printer size={14} className="group-hover:scale-110 transition" /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Imprimer</span>
+          </button>
+
+          <a href={pdfUrl} download={`BKTK-${id.slice(0, 6)}.pdf`} className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-white/40 hover:text-white hover:bg-white/10 rounded-[0.6rem] transition" title="Download Source">
+            <Download size={14} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Source</span>
+          </a>
+
+          <div className="w-[1px] h-4 bg-white/10 mx-1" />
+
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)} 
+            className={`h-9 w-9 flex items-center justify-center rounded-[0.6rem] transition-all ${!isMinimized ? 'bg-primary text-white shadow-lg' : 'text-white/40 hover:text-white hover:bg-white/10'}`}
+            title="Options / QR"
+          >
+            {isMinimized ? <ScanLine size={16} /> : <ChevronUp size={16} />}
+          </button>
+        </motion.div>
       </div>
 
       <style jsx global>{`
@@ -304,20 +290,25 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
             padding: 0 !important;
           }
           header, 
-          .print\:hidden,
-          [class*="absolute bottom-"],
-          [class*="pointer-events-none"] {
+          [class*="bottom-"],
+          [class*="absolute"],
+          [class*="fixed"],
+          .flex-1 {
             display: none !important;
           }
+          /* This resets the layout specifically for the printable Document */
+          div[class*="engine"], 
           main {
-            background: white !important;
-            position: relative !important;
-            overflow: visible !important;
             display: block !important;
-            height: auto !important;
+            background: white !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            overflow: visible !important;
             width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
+            z-index: 9999 !important;
           }
           .react-pdf__Page {
             margin: 0 !important;
@@ -326,12 +317,13 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
             box-shadow: none !important;
             border: none !important;
             transform: none !important;
+            width: 100% !important;
           }
           .react-pdf__Document {
             display: block !important;
             width: 100% !important;
           }
-           canvas {
+          canvas {
             width: 100% !important;
             height: auto !important;
           }
