@@ -190,28 +190,25 @@ export default function DeliveriesClient({ deliveries, selectedSite, sites }: Pr
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* HEADER */}
-      <header className="relative w-full border-b border-border/40 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-         <div className="flex justify-between items-center px-4 sm:px-8 py-3.5 max-w-7xl mx-auto">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="h-10 w-10 flex items-center justify-center bg-muted/40 hover:bg-muted text-muted-foreground rounded-xl transition border border-border/40 hover:text-foreground hover:border-border">
-                <ChevronLeft size={18} />
-              </Link>
-              <div>
-                <h1 className="text-lg sm:text-xl font-black tracking-tight">Historique</h1>
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden sm:block">Archive des commandes et stocks</p>
-              </div>
-            </div>
+      <header className="relative w-full border-b border-border/30 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+         <div className="flex justify-between items-center px-3 sm:px-8 h-12 sm:h-14 max-w-7xl mx-auto">
             <div className="flex items-center gap-2">
+              <Link href="/" className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center bg-muted/30 hover:bg-muted text-muted-foreground rounded-lg sm:rounded-xl transition border border-border/30 hover:text-foreground">
+                <ChevronLeft size={16} />
+              </Link>
+              <h1 className="text-sm sm:text-lg font-black tracking-tight">Historique</h1>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`h-10 px-3 rounded-xl flex items-center gap-2 text-sm font-semibold border transition ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted/30 border-border/40 text-muted-foreground hover:text-foreground'}`}
+                className={`h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center sm:justify-start gap-2 text-xs font-semibold border transition ${showFilters ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted/20 border-border/30 text-muted-foreground hover:text-foreground'}`}
               >
                 <Filter size={14} />
                 <span className="hidden sm:inline">Filtres</span>
               </button>
               <SignOutButton>
-                <button className="flex items-center gap-2 text-xs font-bold text-red-500 bg-red-500/10 px-3 py-2.5 rounded-xl hover:bg-red-500/20 transition border border-red-500/10">
-                  <LogOut size={14} /> <span className="hidden sm:inline">Déconnexion</span>
+                <button className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition">
+                  <LogOut size={14} /> <span className="hidden sm:inline">Quitter</span>
                 </button>
               </SignOutButton>
             </div>
