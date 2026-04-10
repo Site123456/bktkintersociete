@@ -88,7 +88,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
       <motion.header 
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="absolute top-0 inset-x-0 h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-gradient-to-b from-black/90 to-transparent z-50 pointer-events-none"
+        className="absolute top-0 inset-x-0 h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 bg-gradient-to-b from-black/95 to-transparent z-50 pointer-events-none"
       >
         <div className="flex items-center gap-3 pointer-events-auto">
           <button 
@@ -134,7 +134,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
         ref={containerRef}
         className={`flex-1 w-full bg-[#070707] relative flex justify-center overflow-auto no-scrollbar scroll-smooth ${dragMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
       >
-        <div className="min-h-full py-20 px-4 sm:px-10 flex flex-col items-center">
+        <div className="min-h-full py-16 sm:py-20 flex flex-col items-center">
           {pdfUrl ? (
              <Document
               file={pdfUrl}
@@ -142,10 +142,10 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
               loading={
                 <div className="flex flex-col items-center gap-3 py-40 opacity-40">
                   <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-white text-[10px] font-black tracking-widest uppercase">Chargement du moteur...</p>
+                  <p className="text-white text-[10px] font-black tracking-widest uppercase">Chargement...</p>
                 </div>
               }
-              error={<p className="text-white/50 text-sm font-bold p-20">Erreur lors de l'affichage du PDF.</p>}
+              error={<p className="text-white/50 text-sm font-bold p-20">Erreur d'affichage.</p>}
             >
               {Array.from(new Array(numPages), (el, index) => (
                 <motion.div
@@ -153,13 +153,13 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="mb-8 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] rounded-sm overflow-hidden border border-white/5"
+                  className="mb-4 sm:mb-8 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] sm:rounded-sm overflow-hidden border-b sm:border border-white/5"
                   style={{ transformOrigin: "top center", scale }}
                 >
                   <Page 
                     pageNumber={index + 1} 
-                    width={typeof window !== 'undefined' ? Math.min(window.innerWidth * 0.9, 1000) : 800}
-                    loading={<div className="bg-white/5 h-[800px] w-full animate-pulse"></div>}
+                    width={typeof window !== 'undefined' ? (window.innerWidth < 640 ? window.innerWidth : Math.min(window.innerWidth * 0.85, 1200)) : 800}
+                    loading={<div className="bg-white/5 h-[600px] w-full animate-pulse"></div>}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
                   />
@@ -285,12 +285,12 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
         <motion.button
           layout
           onClick={() => setIsMinimized(!isMinimized)}
-          className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 pointer-events-auto flex items-center justify-center text-white shadow-2xl transition-all hover:border-primary/50 group ${isMinimized ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"} ml-auto sm:ml-0`}
+          className={`h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 pointer-events-auto flex items-center justify-center text-white shadow-2xl transition-all hover:border-primary/50 group ${isMinimized ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"} ml-auto sm:ml-0 shadow-primary/10`}
         >
           {isMinimized ? (
             <div className="relative">
-              <ScanLine size={24} className="group-hover:text-primary transition-colors" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-black animate-pulse"></div>
+              <ScanLine size={20} className="sm:w-6 sm:h-6 group-hover:text-primary transition-colors" />
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-black animate-pulse"></div>
             </div>
           ) : <X size={20} />}
         </motion.button>
