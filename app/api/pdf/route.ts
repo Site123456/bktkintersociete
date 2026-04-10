@@ -69,6 +69,13 @@ export async function GET(req: Request) {
     }
   }
 
+  pdf.setProperties({
+    title: `${docTitle} - ${safe(delivery.site?.name || delivery.username || "BKTK")}`,
+    subject: `Document: ${docTitle}. Recap and detailed information.`,
+    creator: "BKTK International",
+    author: "BKTK International"
+  });
+
   /* ================= HEADER (PAGE 1) ================= */
 
   const drawHeader = () => {

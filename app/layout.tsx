@@ -17,8 +17,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BKTKINTERSOCIETE",
-  description: "Access limité",
+  title: {
+    template: "%s | BKTK International",
+    default: "BKTK International",
+  },
+  description: "Portail B2B de logistique, livraison et gestion des stocks pour BKTK International.",
+  icons: {
+    icon: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 export default function RootLayout({
   children,
