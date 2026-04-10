@@ -118,8 +118,8 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
 
   const scrollToBottom = () => {
     setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, 100);
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+    }, 150);
   };
 
   const filtered = useMemo(() => {
