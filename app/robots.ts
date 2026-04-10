@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/pdf", "/api/pdf"],
+      disallow: ["/pdf", "/api/pdf", "/admin", "/api/auth/"],
     },
     sitemap: "https://bktk.indian-nepaliswad.fr/sitemap.xml",
   };
