@@ -5,9 +5,13 @@ export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
     
-    // In-memory or ENV check
-    const validUsername = process.env.ADMIN_USERNAME || "admin";
-    const validPassword = process.env.ADMIN_PASSWORD || "admin123";
+    const validUsername = process.env.ADMIN_USERNAME;
+    const validPassword = process.env.ADMIN_PASSWORD;
+
+    if (!validUsername || !validPassword) {
+      console.error("ADMIN_USERNAME or ADMIN_PASSWORD is not set in environment variables");
+      return NextResponse.json({ ok: false, error: "Server Configuration Error" }, { status: 500 });
+    }
 
     if (username === validUsername && password === validPassword) {
       // Set simple cookie
