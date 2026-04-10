@@ -168,97 +168,114 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
   const hasLines = lines.length > 0;
 
   return (
-    <div className={`space-y-6 ${hasLines ? "pb-60" : "pb-32"}`}>
+    <div className={`space-y-4 sm:space-y-6 ${hasLines ? "pb-60" : "pb-32"}`}>
 
+      {/* Date + counter row — compact on mobile */}
       <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        className="flex flex-col sm:flex-row sm:items-center gap-4 bg-card/80 backdrop-blur-sm p-5 rounded-2xl border border-border/60 shadow-sm"
+        className="flex items-center gap-3 bg-card/80 backdrop-blur-sm p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border/50 shadow-sm"
       >
+        <Clock size={14} className="text-primary shrink-0 hidden sm:block" />
         <div className="flex-1">
-          <label className="text-xs font-bold text-muted-foreground mb-2 block uppercase tracking-wider flex items-center gap-2">
-            <Clock size={12} className="text-primary" />
-            Date de livraison souhaitée
-          </label>
+          <label className="text-[10px] sm:text-xs font-bold text-muted-foreground mb-1 block uppercase tracking-wider">Livraison le</label>
           <input type="date" value={date} min={tomorrow()} onChange={e => setDate(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border bg-background/80 focus:ring-2 focus:ring-primary/40 focus:border-primary/40 outline-none transition text-sm font-semibold"
+            className="w-full px-3 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-border/50 bg-background/80 focus:ring-2 focus:ring-primary/30 outline-none transition text-xs sm:text-sm font-semibold"
           />
         </div>
-        <div className="hidden sm:flex flex-col items-center gap-1 px-6 py-2 bg-primary/5 rounded-xl border border-primary/10">
-          <span className="text-3xl font-black text-primary">{lines.length}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Articles</span>
+        <div className="flex flex-col items-center justify-center px-4 py-1.5 bg-primary/5 rounded-xl border border-primary/10 shrink-0">
+          <span className="text-xl sm:text-2xl font-black text-primary leading-none">{lines.length}</span>
+          <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">article{lines.length !== 1 ? 's' : ''}</span>
         </div>
       </motion.div>
 
-      <div className="sticky top-12 sm:top-14 z-40 w-full bg-background/90 backdrop-blur-2xl py-2.5 sm:py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-border/20">
+      {/* Sticky search bar */}
+      <div className="sticky top-12 sm:top-14 z-40 w-full bg-background/95 backdrop-blur-2xl py-2 sm:py-2.5 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="relative group">
-          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition" size={16} />
+          <SearchIcon className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={15} />
           <input type="text" value={search} onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)} onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-            placeholder="Rechercher ou ajouter un produit..."
-            className="w-full pl-10 pr-4 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm focus:bg-background focus:ring-2 focus:ring-primary/40 outline-none transition text-sm sm:text-base shadow-sm font-medium"
+            placeholder="Ajouter un produit..."
+            className="w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm focus:bg-background focus:ring-2 focus:ring-primary/30 focus:border-primary/20 outline-none transition-all text-sm shadow-sm font-medium placeholder:text-muted-foreground/60"
           />
+          {search && (
+            <button onClick={() => { setSearch(""); setShowDropdown(false); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-md transition">
+              <Trash2 size={12} className="text-muted-foreground" />
+            </button>
+          )}
         </div>
 
         <AnimatePresence>
           {showDropdown && search.length > 0 && (
             <motion.ul
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              className="absolute w-full mt-2 bg-card/95 backdrop-blur-xl border rounded-2xl shadow-2xl max-h-64 sm:max-h-72 overflow-auto z-50 py-1.5"
+              initial={{ opacity: 0, y: -4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-4 right-4 sm:left-0 sm:right-0 mt-1.5 bg-card/98 backdrop-blur-xl border border-border/50 rounded-xl sm:rounded-2xl shadow-2xl max-h-56 sm:max-h-72 overflow-auto z-50 py-1"
             >
-              {filtered.map((p, i) => (
-                <li key={i} onMouseDown={(e) => { e.preventDefault(); addProduct(p); }} className="px-3.5 py-2.5 cursor-pointer hover:bg-primary/5 transition flex justify-between items-center group">
-                  <span className="font-semibold text-sm group-hover:text-primary transition truncate">{p.uniquename}</span>
-                  <span className="text-[11px] text-muted-foreground px-2 py-0.5 bg-muted rounded-md font-bold shrink-0 ml-2">{p.typedequantite}</span>
+              {filtered.length === 0 && (
+                <li className="px-3.5 py-3 text-sm text-muted-foreground text-center">Aucun résultat</li>
+              )}
+              {filtered.slice(0, 12).map((p, i) => (
+                <li key={i} onMouseDown={(e) => { e.preventDefault(); addProduct(p); }} className="px-3 py-2 sm:py-2.5 mx-1 cursor-pointer hover:bg-primary/5 active:bg-primary/10 transition rounded-lg flex justify-between items-center group">
+                  <span className="font-semibold text-xs sm:text-sm group-hover:text-primary transition truncate">{p.uniquename}</span>
+                  <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-muted rounded font-bold shrink-0 ml-2">{p.typedequantite}</span>
                 </li>
               ))}
-              <li onMouseDown={(e) => { e.preventDefault(); addNewProduct(search); }} className="px-3.5 py-2.5 cursor-pointer hover:bg-primary/10 transition font-bold text-primary text-sm flex gap-2 items-center border-t mt-1">
-                <Plus size={14} /> Ajouter &quot;{search}&quot; comme nouveau
+              <li onMouseDown={(e) => { e.preventDefault(); addNewProduct(search); }} className="px-3 py-2.5 mx-1 cursor-pointer hover:bg-primary/10 active:bg-primary/15 transition font-bold text-primary text-xs sm:text-sm flex gap-1.5 items-center border-t border-border/30 mt-1 rounded-lg">
+                <Plus size={13} /> Ajouter &quot;{search}&quot;
               </li>
             </motion.ul>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="space-y-3">
+      {/* Product lines */}
+      <div className="space-y-2 sm:space-y-3">
         <AnimatePresence mode="popLayout">
-          {lines.map((l, i) => (
+          {lines.map((l) => (
             <motion.div
               key={l.id}
               layout
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="relative group border rounded-2xl bg-card/80 backdrop-blur-sm p-4 shadow-sm flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between transition-all hover:shadow-lg hover:border-primary/20"
+              transition={{ duration: 0.15 }}
+              className="relative group border border-border/40 rounded-xl sm:rounded-2xl bg-card/70 backdrop-blur-sm p-3 sm:p-4 shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-all hover:shadow-md hover:border-primary/15"
             >
-              <button onClick={() => removeLine(l.id)} className="absolute top-3 right-3 sm:hidden text-red-500/70 hover:text-red-500 transition p-2 bg-red-500/5 rounded-xl hover:bg-red-500/10 border"><Trash2 size={16} /></button>
-              <div className="flex items-start gap-4 flex-1">
-                <div className="pt-1.5 opacity-20 cursor-grab text-primary"><GripVertical size={20} /></div>
-                <div className="flex flex-col gap-1.5 w-full pr-10 sm:pr-0">
-                  <input value={l.name} onChange={(e) => setLines(prev => prev.map(item => item.id === l.id ? { ...item, name: e.target.value } : item))} className="text-base font-bold bg-transparent border-none focus:ring-0 outline-none w-full p-0" placeholder="Nom du produit" />
-                  <input value={l.unit} placeholder="Unité / Description (ex: KG, Pièce)" onChange={(e) => setLines(prev => prev.map(item => item.id === l.id ? { ...item, unit: e.target.value } : item))} className="text-xs text-muted-foreground font-medium bg-transparent border-none focus:ring-0 outline-none w-full p-0" />
+              {/* Mobile delete */}
+              <button onClick={() => removeLine(l.id)} className="absolute top-2.5 right-2.5 sm:hidden text-red-500/50 hover:text-red-500 transition p-1.5 rounded-lg hover:bg-red-500/10">
+                <Trash2 size={14} />
+              </button>
+
+              {/* Name + unit */}
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="pt-1 opacity-15 cursor-grab text-primary hidden sm:block"><GripVertical size={18} /></div>
+                <div className="flex flex-col gap-0.5 w-full pr-8 sm:pr-0">
+                  <input value={l.name} onChange={(e) => setLines(prev => prev.map(item => item.id === l.id ? { ...item, name: e.target.value } : item))} className="text-sm sm:text-base font-bold bg-transparent border-none focus:ring-0 outline-none w-full p-0 truncate" placeholder="Nom du produit" />
+                  <input value={l.unit} placeholder="Unité (KG, Pièce...)" onChange={(e) => setLines(prev => prev.map(item => item.id === l.id ? { ...item, unit: e.target.value } : item))} className="text-[11px] sm:text-xs text-muted-foreground/70 font-medium bg-transparent border-none focus:ring-0 outline-none w-full p-0" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 w-full sm:w-auto sm:justify-end bg-muted/40 p-1.5 rounded-xl border">
-                <button onClick={() => updateQty(l.id, l.qty - 1)} className="p-2.5 sm:p-3 rounded-xl bg-card border shadow-xs hover:text-primary hover:border-primary/30 transition active:scale-90"><Minus size={16} /></button>
-                <input type="number" min={0} value={l.qty} onChange={(e) => updateQty(l.id, Number(e.target.value))} className="w-16 text-center font-black text-lg bg-transparent border-none focus:ring-0 outline-none" />
-                <button onClick={() => updateQty(l.id, l.qty + 1)} className="p-2.5 sm:p-3 rounded-xl bg-card border shadow-xs hover:text-primary hover:border-primary/30 transition active:scale-90"><Plus size={16} /></button>
+
+              {/* Qty controls */}
+              <div className="flex items-center gap-0.5 w-full sm:w-auto sm:justify-end bg-muted/30 p-1 rounded-lg border border-border/30">
+                <button onClick={() => updateQty(l.id, l.qty - 1)} className="p-2 sm:p-2.5 rounded-lg bg-card border border-border/40 shadow-xs hover:text-primary hover:border-primary/20 transition active:scale-90"><Minus size={14} /></button>
+                <input type="number" min={0} value={l.qty} onChange={(e) => updateQty(l.id, Number(e.target.value))} className="w-12 sm:w-14 text-center font-black text-base bg-transparent border-none focus:ring-0 outline-none" />
+                <button onClick={() => updateQty(l.id, l.qty + 1)} className="p-2 sm:p-2.5 rounded-lg bg-card border border-border/40 shadow-xs hover:text-primary hover:border-primary/20 transition active:scale-90"><Plus size={14} /></button>
               </div>
-              <button onClick={() => removeLine(l.id)} className="hidden sm:flex text-red-500/60 hover:text-red-500 transition p-3 bg-red-500/5 rounded-xl border hover:bg-red-500/10 ml-2 hover:border-red-500/30"><Trash2 size={20} /></button>
+
+              {/* Desktop delete */}
+              <button onClick={() => removeLine(l.id)} className="hidden sm:flex text-red-500/40 hover:text-red-500 transition p-2.5 rounded-xl hover:bg-red-500/5 ml-1"><Trash2 size={18} /></button>
             </motion.div>
           ))}
         </AnimatePresence>
 
         {lines.length === 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="w-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-3xl bg-card/30 border-primary/15"
+            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+            className="w-full flex flex-col items-center justify-center py-14 sm:py-20 text-center border border-dashed border-border/40 rounded-2xl bg-card/20"
           >
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
-              <Package className="h-8 w-8 text-primary/40" />
-            </div>
-            <h3 className="font-bold text-foreground/80 text-lg">Aucun produit dans la liste</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-xs leading-relaxed">Commencez par ajouter des produits à votre expédition ci-dessus ou via la barre en bas.</p>
+            <Package className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground/20 mb-4" />
+            <h3 className="font-bold text-foreground/60 text-sm sm:text-base">Liste vide</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground/60 mt-1 max-w-[250px] leading-relaxed">Ajoutez des produits via la barre de recherche ou le menu rapide.</p>
           </motion.div>
         )}
       </div>
