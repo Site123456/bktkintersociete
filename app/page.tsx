@@ -134,7 +134,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, unit: "Pièce" })
       });
-    } catch(e) {}
+    } catch (e) { }
   };
 
   const updateQty = (id: string, qty: number) => {
@@ -146,7 +146,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
   const generatePDF = async () => {
     if (!user) return;
     setLoading(true);
-    
+
     const payload = {
       docType: "supply",
       date: today(),
@@ -169,8 +169,8 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
 
   return (
     <div className={`space-y-6 ${hasLines ? "pb-60" : "pb-32"}`}>
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="flex flex-col sm:flex-row sm:items-center gap-4 bg-card/80 backdrop-blur-sm p-5 rounded-2xl border border-border/60 shadow-sm"
       >
@@ -201,7 +201,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
 
         <AnimatePresence>
           {showDropdown && search.length > 0 && (
-            <motion.ul 
+            <motion.ul
               initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               className="absolute w-full mt-2 bg-card/95 backdrop-blur-xl border rounded-2xl shadow-2xl max-h-72 overflow-auto z-50 py-2"
             >
@@ -222,11 +222,11 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
           {lines.map((l, i) => (
-            <motion.div 
-              key={l.id} 
+            <motion.div
+              key={l.id}
               layout
-              initial={{ opacity: 0, scale: 0.95 }} 
-              animate={{ opacity: 1, scale: 1 }} 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95, x: -20 }}
               transition={{ duration: 0.2 }}
               className="relative group border rounded-2xl bg-card/80 backdrop-blur-sm p-4 shadow-sm flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between transition-all hover:shadow-lg hover:border-primary/20"
@@ -250,7 +250,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
         </AnimatePresence>
 
         {lines.length === 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="w-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-3xl bg-card/30 border-primary/15"
           >
@@ -267,7 +267,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
 
       {/* Mobile fixed bottom CTA */}
       <div className="fixed inset-x-0 bottom-0 p-4 bg-background/90 backdrop-blur-xl border-t z-40 sm:hidden pb-safe">
-        <motion.button 
+        <motion.button
           onClick={generatePDF} disabled={!lines.length || loading}
           whileTap={{ scale: 0.97 }}
           className={`w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-primary/20 ${lines.length ? "opacity-100" : "opacity-40 grayscale pointer-events-none"}`}
@@ -280,9 +280,9 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
       {/* Desktop floating CTA */}
       <AnimatePresence>
         {lines.length > 0 && (
-          <motion.button 
+          <motion.button
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-            onClick={generatePDF} disabled={loading} 
+            onClick={generatePDF} disabled={loading}
             whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             className="hidden sm:flex fixed right-8 bottom-8 h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-bold items-center justify-center gap-2.5 shadow-2xl shadow-primary/30 hover:shadow-primary/40 transition-shadow"
           >
@@ -299,10 +299,10 @@ export default function HomePage() {
   const { user, isLoaded } = useUser();
   const [sites] = useState<Site[]>(FALLBACK_SITES);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
-  
+
   const [isVerified, setIsVerified] = useState(false);
   const [syncing, setSyncing] = useState(true);
-  
+
   const [currentMode, setCurrentMode] = useState<"commander" | "stock">("commander");
   const [globalProduits, setGlobalProduits] = useState<Produit[]>([]);
 
@@ -321,10 +321,10 @@ export default function HomePage() {
         const res = await fetch("/api/user/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            clerkId: user.id, 
-            email: user.primaryEmailAddress?.emailAddress, 
-            name: user.fullName || user.username 
+          body: JSON.stringify({
+            clerkId: user.id,
+            email: user.primaryEmailAddress?.emailAddress,
+            name: user.fullName || user.username
           })
         });
         if (res.ok) {
@@ -338,7 +338,7 @@ export default function HomePage() {
 
     const key = `selected-site-${user.id}`;
     const stored = localStorage.getItem(key);
-    if (stored) { try { setSelectedSite(JSON.parse(stored)); } catch {} }
+    if (stored) { try { setSelectedSite(JSON.parse(stored)); } catch { } }
   }, [user, isLoaded]);
 
   const selectSite = (site: Site) => {
@@ -416,13 +416,13 @@ export default function HomePage() {
           /* ==================== LANDING / NOT SIGNED IN ==================== */
           <div className="mt-8 sm:mt-16">
             {/* Hero Section */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
               className="text-center mb-16 sm:mb-20 relative"
             >
               {/* Background Glow */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[50vh] max-w-[800px] max-h-[500px] bg-primary/8 blur-[120px] rounded-full pointer-events-none"></div>
-              
+
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: "spring" }}
                 className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/10 relative"
@@ -432,15 +432,11 @@ export default function HomePage() {
                   <CheckCircle2 size={10} className="text-white" />
                 </div>
               </motion.div>
-              
+
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight mb-5 relative z-10 text-foreground leading-tight">
-                Gestion <span className="text-primary">Logistique</span><br className="sm:hidden" /> Simplifiée
+                BKTK <span className="text-primary">International</span><br className="sm:hidden" />
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground/80 font-medium relative z-10 max-w-xl mx-auto leading-relaxed mb-10">
-                Le portail B2B de BKTK International. Commandez, gérez vos stocks et suivez vos livraisons en temps réel.
-              </p>
-              
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
                 className="flex flex-col sm:flex-row gap-3 justify-center items-center relative z-10"
               >
@@ -452,32 +448,7 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
 
-            {/* Features Bento Grid */}
-            <motion.div 
-              initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16"
-            >
-              {[
-                { icon: <Send className="h-6 w-6" />, title: "Commandes Express", desc: "Créez et envoyez vos bons de commande en quelques clics." },
-                { icon: <BarChart3 className="h-6 w-6" />, title: "Suivi des Stocks", desc: "Inventaire mensuel et récapitulatif automatique par site." },
-                { icon: <Truck className="h-6 w-6" />, title: "Livraisons en Temps Réel", desc: "Suivez chaque livraison avec des PDFs générés instantanément." },
-              ].map((feat, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 + i * 0.1 }}
-                  className="group p-6 sm:p-8 bg-card/60 backdrop-blur-sm border border-border/40 rounded-3xl hover:border-primary/20 hover:bg-card/80 transition-all hover:shadow-xl hover:-translate-y-1"
-                >
-                  <div className="h-12 w-12 rounded-2xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center text-primary mb-5 transition-colors">
-                    {feat.icon}
-                  </div>
-                  <h3 className="font-bold text-lg mb-2 tracking-tight">{feat.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{feat.desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {/* Trust Bar */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
               className="text-center pb-12"
             >
@@ -489,7 +460,7 @@ export default function HomePage() {
           </div>
         ) : !isVerified ? (
           /* ==================== PENDING VERIFICATION ==================== */
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             className="mt-20 flex flex-col items-center justify-center text-center p-8 sm:p-10 bg-card border border-yellow-500/20 rounded-3xl shadow-xl max-w-md mx-auto relative overflow-hidden"
           >
@@ -503,55 +474,55 @@ export default function HomePage() {
             </motion.div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-3">En attente de validation</h1>
             <p className="text-muted-foreground mb-6 leading-relaxed">Votre compte a été créé mais doit être validé par un administrateur avant de pouvoir commander.</p>
-            <p className="text-xs font-bold text-foreground/50 uppercase tracking-widest bg-muted px-4 py-2.5 rounded-xl">ID: {user.id.slice(0,10)}...</p>
+            <p className="text-xs font-bold text-foreground/50 uppercase tracking-widest bg-muted px-4 py-2.5 rounded-xl">ID: {user.id.slice(0, 10)}...</p>
           </motion.div>
         ) : !selectedSite ? (
           /* ==================== SITE SELECTION ==================== */
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="mt-8 sm:mt-12"
           >
-             <div className="mb-10 text-center sm:text-left">
-               <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-                 Bonjour, <span className="text-primary">{user.firstName || 'Manager'}</span>
-               </h1>
-               <p className="text-muted-foreground mt-2 text-base">Sélectionnez le site pour lequel vous souhaitez agir aujourd&apos;hui.</p>
-             </div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-               {sites.map((site, i) => (
-                  <motion.button 
-                    key={site.slug} 
-                    initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    onClick={() => selectSite(site)} 
-                    className="group relative p-6 bg-card/70 backdrop-blur-sm border border-border/50 hover:border-primary/40 hover:bg-card rounded-3xl text-left transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden"
-                  >
-                    <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="h-12 w-12 rounded-2xl bg-muted/50 group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
-                      <Building2 className="h-6 w-6 text-foreground/40 group-hover:text-primary transition-colors" />
-                    </div>
-                    <h3 className="font-bold text-base">{site.name}</h3>
-                    <p className="text-xs font-semibold text-muted-foreground mt-1.5 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      {site.slug}
-                    </p>
-                  </motion.button>
-               ))}
-             </div>
+            <div className="mb-10 text-center sm:text-left">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
+                Bonjour, <span className="text-primary">{user.firstName || 'Manager'}</span>
+              </h1>
+              <p className="text-muted-foreground mt-2 text-base">Sélectionnez le site pour lequel vous souhaitez agir aujourd&apos;hui.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sites.map((site, i) => (
+                <motion.button
+                  key={site.slug}
+                  initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  onClick={() => selectSite(site)}
+                  className="group relative p-6 bg-card/70 backdrop-blur-sm border border-border/50 hover:border-primary/40 hover:bg-card rounded-3xl text-left transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden"
+                >
+                  <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="h-12 w-12 rounded-2xl bg-muted/50 group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
+                    <Building2 className="h-6 w-6 text-foreground/40 group-hover:text-primary transition-colors" />
+                  </div>
+                  <h3 className="font-bold text-base">{site.name}</h3>
+                  <p className="text-xs font-semibold text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    {site.slug}
+                  </p>
+                </motion.button>
+              ))}
+            </div>
           </motion.div>
         ) : (
           /* ==================== MAIN COMMANDING VIEW ==================== */
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            
+
             {/* Mode Toggle */}
             <div className="flex bg-muted/40 p-1.5 rounded-2xl mb-8 w-full sm:w-fit mx-auto sm:mx-0 border border-border/40 relative">
-              <button 
-                onClick={() => setCurrentMode("commander")} 
+              <button
+                onClick={() => setCurrentMode("commander")}
                 className={`flex-1 sm:w-48 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all z-10 ${currentMode === "commander" ? "text-foreground shadow-md bg-background border border-border/50" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <Package size={16} /> Commander
               </button>
-              <button 
-                onClick={() => setCurrentMode("stock")} 
+              <button
+                onClick={() => setCurrentMode("stock")}
                 className={`flex-1 sm:w-48 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all z-10 ${currentMode === "stock" ? "text-foreground shadow-md bg-background border border-border/50" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <ClipboardList size={16} /> Gérer le Stock
