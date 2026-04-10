@@ -347,29 +347,26 @@ export default function HomePage() {
   };
 
   const AppHeader = () => (
-    <header className="relative w-full border-b border-border/40 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-      <div className="flex h-16 items-center justify-between px-4 sm:px-8 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
+    <header className="relative w-full border-b border-border/30 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+      <div className="flex h-12 sm:h-14 items-center justify-between px-3 sm:px-8 max-w-7xl mx-auto">
+        {/* Left: Brand */}
+        <div className="flex items-center gap-2">
           <SignedOut>
-            <div className="h-9 w-9 rounded-xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 flex items-center justify-center text-primary-foreground font-black text-sm">B</div>
-            <div className="hidden sm:flex flex-col leading-tight ml-2">
-              <span className="text-sm font-bold tracking-tight">BKTK INTL.</span>
-              <span className="text-xs text-muted-foreground font-medium">Portail Sécurisé</span>
-            </div>
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 flex items-center justify-center text-primary-foreground font-black text-xs sm:text-sm">B</div>
+            <span className="text-xs sm:text-sm font-bold tracking-tight hidden sm:block">BKTK INTL.</span>
           </SignedOut>
           <SignedIn>
             <UserAvatar />
-            <div className="flex flex-col leading-tight ml-1">
-              <span className="text-sm font-bold tracking-tight">BKTK INTL.</span>
+            <div className="flex flex-col leading-none ml-1">
+              <span className="text-xs sm:text-sm font-bold tracking-tight">BKTK</span>
               {selectedSite ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="text-xs text-primary font-semibold hover:opacity-80 transition flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-md mt-0.5">
-                      {selectedSite.name} <ChevronDown size={12} />
+                    <button className="text-[10px] sm:text-xs text-primary font-semibold hover:opacity-80 transition flex items-center gap-0.5 mt-0.5">
+                      {selectedSite.name} <ChevronDown size={10} />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-60 p-2 rounded-2xl shadow-2xl border bg-popover/95 backdrop-blur-xl">
-                    <p className="px-3 md:hidden py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Changer de site</p>
+                  <DropdownMenuContent className="w-56 p-2 rounded-2xl shadow-2xl border bg-popover/95 backdrop-blur-xl">
                     {sites.map((site) => (
                       <button key={site.slug} onClick={() => selectSite(site)} className={`w-full text-left px-3 py-2.5 text-sm font-medium rounded-xl transition flex items-center gap-3 ${selectedSite.slug === site.slug ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted'}`}>
                         <Building2 size={14} className="opacity-60" />
@@ -378,28 +375,30 @@ export default function HomePage() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <span className="text-[10px] uppercase font-bold text-muted-foreground mt-0.5 tracking-widest">Connecté</span>
-              )}
+              ) : null}
             </div>
           </SignedIn>
         </div>
-        <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/40">
+
+        {/* Right: Actions — icon-only on mobile */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="ghost" size="sm" className="rounded-xl h-10 font-bold px-4">Connexion</Button>
+              <Button variant="ghost" size="sm" className="rounded-lg sm:rounded-xl h-8 sm:h-9 font-bold px-3 text-xs sm:text-sm">Connexion</Button>
             </SignInButton>
           </SignedOut>
           <SignedIn>
-            <Link href="/deliveries" className="h-10 px-3 rounded-xl flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 transition">
-              <Archive size={16} />
+            <Link href="/deliveries" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center sm:justify-start gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 transition">
+              <Archive size={15} />
               <span className="hidden sm:inline">Historique</span>
             </Link>
             <SignOutButton>
-              <Button variant="ghost" size="sm" className="rounded-xl h-10 font-bold px-3 hover:bg-red-500/10 hover:text-red-500">Déconnexion</Button>
+              <button className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition">
+                <LogOut size={14} />
+                <span className="hidden sm:inline">Quitter</span>
+              </button>
             </SignOutButton>
           </SignedIn>
-          <div className="w-[1px] h-6 bg-border/40 mx-0.5"></div>
           <ModeToggle />
         </div>
       </div>
