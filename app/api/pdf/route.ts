@@ -79,61 +79,100 @@ export async function GET(req: Request) {
   /* ================= HEADER (PAGE 1) ================= */
 
   const drawHeader = () => {
-    // Branding Bar (Subtle top line)
-    pdf.setFillColor(0, 51, 153); // Royal Blue
-    pdf.rect(M, 10, W - M * 2, 1.5, "F");
+    pdf.setFontSize(10).setTextColor(30);
+    pdf.text("BKTK INTERNATIONAL", M, 14);
 
-    pdf.setFontSize(10).setTextColor(0, 51, 153).setFont("helvetica", "bold");
-    pdf.text("BKTK INTERNATIONAL", M, 18);
-    
-    pdf.setFontSize(8).setTextColor(100).setFont("helvetica", "normal");
-    pdf.text("1 Avenue Louis Blériot, Local A22", M, 22);
-    pdf.text("93120 La Courneuve – France", M, 26);
+    pdf.setFontSize(8).setTextColor(110);
+    pdf.text("1 Avenue Louis Blériot, Local A22", M, 18);
+    pdf.text("93120 La Courneuve – France", M, 22);
 
-    pdf.setFontSize(24).setTextColor(30).setFont("helvetica", "bold");
-    pdf.text(docTitle, W - M, 20, { align: "right" });
+    pdf.setFontSize(23).setTextColor(20);
+    pdf.text(docTitle, W - M, 16, { align: "right" });
 
-    pdf.setFontSize(9).setTextColor(100).setFont("helvetica", "normal");
-    pdf.text(`RÉFÉRENCE : ${safe(delivery.ref)}`, W - M, 26, { align: "right" });
+    pdf.setFontSize(8.5).setTextColor(110);
+    pdf.text(`REF : ${safe(delivery.ref)}`, W - M, 22, { align: "right" });
 
-    pdf.setDrawColor(200);
-    pdf.line(M, 30, W - M, 30);
+    pdf.setDrawColor(220);
+    pdf.line(M, 26, W - M, 26);
 
-    /* Metadata Block */
-    const top = 36;
-    
-    // Abstract Pattern/Metadata Grid
-    pdf.setFillColor(240, 240, 240);
-    pdf.roundedRect(M, top, 40, 18, 1, 1, "F");
-    
-    pdf.setFontSize(7).setTextColor(120).setFont("helvetica", "bold");
-    pdf.text("DATE DU DOCUMENT", M + 3, top + 5);
-    pdf.setFontSize(10).setTextColor(40).setFont("helvetica", "bold");
-    pdf.text(safe(delivery.date), M + 3, top + 11);
+    /* Metadata grid */
+    const mid = W - (W / 4);
+    const top = 30;
 
-    // Site / Recipient Section
-    const site = getSiteHeader(delivery.site?.slug);
-    if (site) {
-      pdf.setFontSize(7).setTextColor(120).setFont("helvetica", "bold");
-      pdf.text("DESTINATAIRE / SITE", 60, top + 5);
-      
-      pdf.setFontSize(11).setTextColor(0, 51, 153).setFont("helvetica", "bold");
-      pdf.text(site.name.toUpperCase(), 60, top + 11);
-      
-      pdf.setFontSize(8.5).setTextColor(80).setFont("helvetica", "normal");
-      pdf.text(`${site.line1}, ${site.line2}`, 60, top + 15);
-    } else {
-      pdf.setFontSize(11).setTextColor(0, 51, 153).setFont("helvetica", "bold");
-      pdf.text(safe(delivery.username || "CLIENT BKTK").toUpperCase(), 60, top + 11);
+    pdf.setFontSize(6).setTextColor(20);
+    const boxWidth = 0.8;
+    const boxHeight = 0.8;
+    let x = 82;
+    for (let i = 0; i < id.length; i++) {
+      const shade = Math.floor(Math.random() * 151) + 50;
+      pdf.setFillColor(shade, shade, shade);
+
+      pdf.roundedRect(x, top - boxHeight + 6, boxWidth, boxHeight, 0.4, 0.4, "F");
+
+      x += boxWidth + 0.5;
+    }
+    x = 82.2;
+    pdf.setFontSize(2).setTextColor(20);
+    for (let i = 0; i < id.length; i++) {
+      pdf.text(id[i], x, 36.8);
+      x += 1.3;
+    }
+    x = 82;
+    for (let i = 0; i < id.length; i++) {
+      const shade = Math.floor(Math.random() * 151) + 50;
+      pdf.setFillColor(shade, shade, shade);
+
+      pdf.roundedRect(x, top - boxHeight + 7.8, boxWidth, boxHeight, 0.4, 0.4, "F");
+
+      x += boxWidth + 0.5;
     }
 
-    /* QR Code */
-    pdf.addImage(qrDataUrl, "PNG", W - M - 28, top - 2, 28, 28);
-    pdf.setDrawColor(0, 51, 153);
-    pdf.setLineWidth(0.5);
-    pdf.roundedRect(W - M - 28, top - 2, 28, 28, 0.5, 0.5, "D");
 
-    y = 68;
+    pdf.setFontSize(9).setTextColor(40);
+
+    pdf.text(`Fait le : ${safe(delivery.date)}`, M, top + 2);
+    pdf.setFontSize(18).setTextColor(200);
+    const bigLabel = isStock ? safe(delivery.site?.name).toUpperCase() : safe(delivery.username).toUpperCase().slice(0, 20);
+    pdf.text(bigLabel, 82, top + 4, {
+      align: "left",
+    });
+    pdf.setFontSize(8).setTextColor(0);
+
+    pdf.roundedRect(80, top - 2, 80, 10, 1.2, 1.2);
+
+    if (!isStock) {
+      pdf.text(`Expedition date / Date d'envoi`, 82, 48, { align: "left" });
+      pdf.roundedRect(74, 44, 86, 20, 1.2, 1.2);
+    }
+
+    pdf.setFontSize(8).setTextColor(100);
+    pdf.text(`${safe(delivery.signedBy)}`, mid, top + 7, {
+      align: "right",
+    });
+    pdf.setFontSize(9).setTextColor(40);
+    if (!isStock) {
+      pdf.text(`Demandée pour : ${safe(delivery.requestedDeliveryDate)}`, M, top + 6);
+    }
+    pdf.setFontSize(8);
+    pdf.text(`https://bktk.indian-nepaliswad.fr/pdf?id=${id}`, mid, top + 12, {
+      align: "right",
+    });
+
+    const site = getSiteHeader(delivery.site?.slug);
+    if (site) {
+      pdf.setFontSize(10);
+      pdf.text(`${site.name}`, M, top + 18);
+      pdf.setFontSize(9).setTextColor(110);
+      pdf.text(site.line1, M, top + 22);
+      pdf.text(site.line2, M, top + 26);
+    }
+
+    /* QR */
+    pdf.addImage(qrDataUrl, "PNG", W - M - 30, top - 2, 30, 30);
+
+    pdf.setDrawColor(225);
+
+    y = 64;
   };
 
   /* ================= COMPACT HEADER (OTHER PAGES) ================= */
@@ -178,7 +217,7 @@ export async function GET(req: Request) {
 
   /* Table Header */
   pdf.setFontSize(9.5).setTextColor(30);
-    // 5 solid colors as RGB tuples
+  // 5 solid colors as RGB tuples
   const swatches: [number, number, number][] = [
     [230, 230, 230], // white
     [180, 180, 180], // light gray
@@ -199,7 +238,7 @@ export async function GET(req: Request) {
   sy = 240;
   swatches.forEach(([r, g, b]) => {
     pdf.setFillColor(r, g, b);
-    pdf.roundedRect(W-3, sy, swatchW, swatchH, 1.2, 1.2, "F");
+    pdf.roundedRect(W - 3, sy, swatchW, swatchH, 1.2, 1.2, "F");
     sy += swatchH + 2; // spacing between swatches
   });
 
@@ -239,7 +278,7 @@ export async function GET(req: Request) {
 
       pdf.text(
         `${site.name}`,
-        W-M-14,
+        W - M - 14,
         headerTop + 9,
         { align: "right" }
       );
@@ -295,8 +334,8 @@ export async function GET(req: Request) {
       const itemsPerPage = ROWS_PER_PAGE * 2;
       if (page > 0) pdf.addPage();
       const site = getSiteHeader(delivery.site?.slug);
-      if(site && !isFirstPage) drawPageHeader(page, delivery.ref, site, delivery.date);
-      
+      if (site && !isFirstPage) drawPageHeader(page, delivery.ref, site, delivery.date);
+
 
       y = TOP_Y;
       drawTableHeader();
@@ -367,7 +406,7 @@ export async function GET(req: Request) {
     }
   }
 
- else {
+  else {
 
     // Column titles (slightly bolder feel)
     const headerY = y + 1.5; // subtle vertical centering
