@@ -200,7 +200,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
       {/* Sticky search bar */}
       <div className="sticky top-12 sm:top-14 z-40 w-full bg-background/95 backdrop-blur-2xl py-2 sm:py-2.5 px-4 sm:px-0">
         <div className="relative group">
-          <SearchIcon className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-primary/90 group-focus-within:text-primary transition-all duration-300" size={16} />
+          <SearchIcon className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 transition-all duration-300" size={16} />
           <input type="text" value={search} onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)} onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             placeholder="Rechercher un produit..."
