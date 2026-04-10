@@ -45,7 +45,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "BKTK Document",
+          title: `BKTK - ${id.slice(0, 6)}`,
           text: "Voici le document de commande / stock de BKTK.",
           url: shareUrl,
         });
