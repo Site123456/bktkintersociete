@@ -189,13 +189,13 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
         </div>
       </motion.div>
 
-      <div className="sticky top-0 z-40 w-full bg-background/90 backdrop-blur-2xl py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="sticky top-12 sm:top-14 z-40 w-full bg-background/90 backdrop-blur-2xl py-2.5 sm:py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-border/20">
         <div className="relative group">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition" size={18} />
+          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition" size={16} />
           <input type="text" value={search} onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)} onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             placeholder="Rechercher ou ajouter un produit..."
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border bg-card/60 backdrop-blur-sm focus:bg-background focus:ring-2 focus:ring-primary/40 outline-none transition text-base shadow-sm font-medium"
+            className="w-full pl-10 pr-4 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm focus:bg-background focus:ring-2 focus:ring-primary/40 outline-none transition text-sm sm:text-base shadow-sm font-medium"
           />
         </div>
 
@@ -203,16 +203,16 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
           {showDropdown && search.length > 0 && (
             <motion.ul
               initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              className="absolute w-full mt-2 bg-card/95 backdrop-blur-xl border rounded-2xl shadow-2xl max-h-72 overflow-auto z-50 py-2"
+              className="absolute w-full mt-2 bg-card/95 backdrop-blur-xl border rounded-2xl shadow-2xl max-h-64 sm:max-h-72 overflow-auto z-50 py-1.5"
             >
               {filtered.map((p, i) => (
-                <li key={i} onMouseDown={(e) => { e.preventDefault(); addProduct(p); }} className="px-4 py-3 cursor-pointer hover:bg-primary/5 transition flex justify-between items-center group">
-                  <span className="font-semibold text-sm group-hover:text-primary transition">{p.uniquename}</span>
-                  <span className="text-xs text-muted-foreground px-2.5 py-1 bg-muted rounded-lg font-bold">{p.typedequantite}</span>
+                <li key={i} onMouseDown={(e) => { e.preventDefault(); addProduct(p); }} className="px-3.5 py-2.5 cursor-pointer hover:bg-primary/5 transition flex justify-between items-center group">
+                  <span className="font-semibold text-sm group-hover:text-primary transition truncate">{p.uniquename}</span>
+                  <span className="text-[11px] text-muted-foreground px-2 py-0.5 bg-muted rounded-md font-bold shrink-0 ml-2">{p.typedequantite}</span>
                 </li>
               ))}
-              <li onMouseDown={(e) => { e.preventDefault(); addNewProduct(search); }} className="px-4 py-3 cursor-pointer hover:bg-primary/10 transition font-bold text-primary text-sm flex gap-2 items-center border-t mt-1">
-                <Plus size={16} /> Ajouter &quot;{search}&quot; comme nouveau
+              <li onMouseDown={(e) => { e.preventDefault(); addNewProduct(search); }} className="px-3.5 py-2.5 cursor-pointer hover:bg-primary/10 transition font-bold text-primary text-sm flex gap-2 items-center border-t mt-1">
+                <Plus size={14} /> Ajouter &quot;{search}&quot; comme nouveau
               </li>
             </motion.ul>
           )}
