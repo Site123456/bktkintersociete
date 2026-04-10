@@ -56,6 +56,19 @@ export async function GET(req: Request) {
     { margin: 0, width: 160 }
   );
 
+  const isStock = delivery.docType === "stock";
+  let docTitle = isStock ? "ÉTAT DES STOCKS" : "BON DE LIVRAISON";
+
+  if (isStock && delivery.date) {
+    try {
+      const d = new Date(delivery.date);
+      const mStr = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+      docTitle = `ÉTAT DES STOCKS (${mStr.toUpperCase()})`;
+    } catch (e) {
+      // fallback
+    }
+  }
+
   /* ================= HEADER (PAGE 1) ================= */
 
   const drawHeader = () => {
@@ -67,7 +80,7 @@ export async function GET(req: Request) {
     pdf.text("93120 La Courneuve – France", M, 22);
 
     pdf.setFontSize(23).setTextColor(20);
-    pdf.text("BON DE LIVRAISON", W - M, 16, { align: "right" });
+    pdf.text(docTitle, W - M, 16, { align: "right" });
 
     pdf.setFontSize(8.5).setTextColor(110);
     pdf.text(`REF : ${safe(delivery.ref)}`, W - M, 22, { align: "right" });
@@ -112,27 +125,27 @@ export async function GET(req: Request) {
 
     pdf.text(`Fait le : ${safe(delivery.date)}`, M, top + 2);
     pdf.setFontSize(18).setTextColor(200);
-    pdf.text(`${safe(delivery.username).toUpperCase().slice(0, 20)}`, 82, top + 4, {
+    const bigLabel = isStock ? safe(delivery.site?.name).toUpperCase() : safe(delivery.username).toUpperCase().slice(0, 20);
+    pdf.text(bigLabel, 82, top + 4, {
       align: "left",
     });
     pdf.setFontSize(8).setTextColor(0);
 
     pdf.roundedRect(80, top - 2, 80, 10, 1.2, 1.2);
     
-    pdf.text(`Expedition date / Date d'envoi`, 82, 48, {
-      align: "left",
-    });
-    pdf.roundedRect(74, 44, 86, 20, 1.2, 1.2);
+    if (!isStock) {
+      pdf.text(`Expedition date / Date d'envoi`, 82, 48, { align: "left" });
+      pdf.roundedRect(74, 44, 86, 20, 1.2, 1.2);
+    }
+    
     pdf.setFontSize(8).setTextColor(100);
     pdf.text(`${safe(delivery.signedBy)}`, mid, top + 7, {
       align: "right",
     });
     pdf.setFontSize(9).setTextColor(40);
-    pdf.text(
-      `Demandée pour : ${safe(delivery.requestedDeliveryDate)}`,
-      M,
-      top + 6
-    );
+    if (!isStock) {
+      pdf.text(`Demandée pour : ${safe(delivery.requestedDeliveryDate)}`, M, top + 6);
+    }
     pdf.setFontSize(8);
     pdf.text(`https://bktk.indian-nepaliswad.fr/pdf?id=${id}`, mid, top + 12, {
       align: "right",
@@ -159,7 +172,7 @@ export async function GET(req: Request) {
 
   const drawCompactHeader = () => {
     pdf.setFontSize(10).setTextColor(30);
-    pdf.text("BON DE LIVRAISON", M, 14);
+    pdf.text(docTitle, M, 14);
 
     pdf.setFontSize(8).setTextColor(110);
     pdf.text(`REF : ${safe(delivery.ref)}`, W - M, 14, { align: "right" });

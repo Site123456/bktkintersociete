@@ -34,4 +34,5 @@ export interface Delivery {
     line2: string;
   } | null;
   items: DeliveryItem[];
+  docType?: "supply" | "stock";
 }
