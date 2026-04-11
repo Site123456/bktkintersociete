@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { Document, Page, pdfjs } from "react-pdf";
 
 // CSS for react-pdf (text layers and annotations)
@@ -54,13 +54,20 @@ interface Props {
 
 export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, docType, refId }: Props) {
   const router = useRouter();
+  const sheetDragControls = useDragControls();
+  const moreDragControls = useDragControls();
+  const zoomDragControls = useDragControls();
+  const shareDragControls = useDragControls();
   const [copied, setCopied] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
   // States
   const [numPages, setNumPages] = useState<number>(0);
-  const [scale, setScale] = useState(typeof window !== 'undefined' && window.innerWidth < 1024 ? 0.6 : 1.0);
-  const [baseWidth, setBaseWidth] = useState<number>(600); // Fixed base width for accurate zooming
+  const [scale, setScale] = useState(1.0);
+  // Initialize baseWidth to fit screen width on mobile immediately, avoiding a flash of wrong-size content
+  const [baseWidth, setBaseWidth] = useState<number>(
+    typeof window !== 'undefined' && window.innerWidth < 1024 ? window.innerWidth - 20 : 600
+  );
   const [dragMode, setDragMode] = useState(true);
   const [pageNumber, setPageNumber] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -109,24 +116,24 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
   useEffect(() => {
     if (containerWidth > 0 && containerHeight > 0 && numPages > 0) {
       const isMobile = window.innerWidth < 1024; // lg breakpoint
-      const sidebarWidth = (showThumbnails && !isMobile) ? 260 : 0;
 
-      // Exact 100% available width accounting for safe physical margins
-      // Generous 64px padding on mobile ensures the page doesn't bump into the screen edges
-      const paddingX = isMobile ? 64 : 80;
-      const availableWidth = containerWidth - sidebarWidth - paddingX;
+      if (isMobile) {
+        // Mobile: fit-to-width with only 20px total horizontal margin
+        // This gives maximum reading real-estate on small screens
+        setBaseWidth(containerWidth - 20);
+      } else {
+        // Desktop: balanced fit considering sidebar and height
+        const sidebarWidth = showThumbnails ? 260 : 0;
+        const paddingX = 80;
+        const availableWidth = containerWidth - sidebarWidth - paddingX;
 
-      // Exact 100% available height minus absolute floating UI elements
-      // We must be very generous here because we assume A4 ratio. If a PDF is taller, it might bleed out.
-      const paddingY = isMobile ? 220 : 260;
-      const availableHeight = containerHeight > paddingY ? containerHeight - paddingY : containerHeight;
+        const paddingY = 260;
+        const availableHeight = containerHeight > paddingY ? containerHeight - paddingY : containerHeight;
+        const pageRatio = 595 / 842; // standard A4 aspect ratio -> w/h
+        const heightBasedWidth = availableHeight * pageRatio;
 
-      const pageRatio = 595 / 842; // standard A4 aspect ratio -> w/h
-      const heightBasedWidth = availableHeight * pageRatio;
-
-      // Auto-fit strictly bound to 100% of the exact calculated reading zone
-      // This ensures the height and width both cleanly fit within the viewport without scrolling.
-      setBaseWidth(Math.min(availableWidth, heightBasedWidth, 1200));
+        setBaseWidth(Math.min(availableWidth, heightBasedWidth, 1200));
+      }
     }
   }, [containerWidth, containerHeight, showThumbnails, numPages]);
 
@@ -291,10 +298,15 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
   const handleFitToWidth = () => {
     setIsZoomMenuOpen(false);
     const isMobile = window.innerWidth < 1024;
-    const sidebarWidth = (showThumbnails && !isMobile) ? 260 : 0;
-    const paddingX = isMobile ? 32 : 80;
-    const availableWidth = window.innerWidth - sidebarWidth - paddingX;
-    setScale(Math.min(availableWidth / baseWidth, 3.0));
+    if (isMobile) {
+      // On mobile, baseWidth IS already fit-to-width, so just reset scale to 1.0
+      setScale(1.0);
+    } else {
+      const sidebarWidth = showThumbnails ? 260 : 0;
+      const paddingX = 80;
+      const availableWidth = window.innerWidth - sidebarWidth - paddingX;
+      setScale(Math.min(availableWidth / baseWidth, 3.0));
+    }
   };
 
   const handleFitToHeight = () => {
@@ -353,19 +365,19 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
       >
         <button
           onClick={() => router.push("/")}
-          className="h-10 w-10 sm:h-12 sm:w-12 glass rounded-2xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-300 shadow-xl border border-border/40 hover:bg-foreground/5 hover:scale-105 active:scale-95"
+          className="h-10 w-10 sm:h-12 sm:w-12 glass rounded-2xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 dark:border-white/10 hover:bg-foreground/5 hover:scale-105 active:scale-95 backdrop-blur-[40px]"
         >
           <ChevronLeft size={18} className="sm:hidden" />
           <ChevronLeft size={20} className="hidden sm:block" />
         </button>
 
         {/* Document Mini-Pill */}
-        <div className="glass flex h-10 sm:h-12 items-center px-3 sm:px-4 rounded-2xl border border-border/40 shadow-xl max-w-[calc(100vw-140px)] sm:max-w-none">
-          <div className={`px-1.5 sm:px-2 py-1 rounded-md text-[7px] sm:text-[8px] font-black uppercase tracking-widest shrink-0 ${docType === 'stock' ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+        <div className="glass flex h-10 sm:h-12 items-center px-3 sm:px-4 rounded-2xl border border-white/30 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] max-w-[calc(100vw-140px)] sm:max-w-none backdrop-blur-[60px] transition-all hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
+          <div className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] border border-black/5 dark:border-white/5 ${docType === 'stock' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
             {docTitleLabel}
           </div>
-          <div className="w-[1px] h-4 bg-border/50 mx-2 sm:mx-3 shrink-0" />
-          <span className="text-[9px] sm:text-[11px] font-bold tracking-wide truncate">{siteName}</span>
+          <div className="w-[1px] h-4 bg-black/10 dark:bg-white/10 mx-3 shrink-0" />
+          <span className="text-[10px] sm:text-[12px] font-extrabold tracking-wide truncate opacity-90 drop-shadow-sm">{siteName}</span>
         </div>
       </motion.div>
 
@@ -376,7 +388,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
       >
         <button
           onClick={() => setShowThumbnails(!showThumbnails)}
-          className={`h-10 w-10 sm:h-12 sm:w-12 glass rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border border-border/40 hover:scale-105 active:scale-95 ${showThumbnails ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`h-10 w-10 sm:h-12 sm:w-12 glass rounded-2xl flex items-center justify-center transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border hover:scale-105 active:scale-95 backdrop-blur-[40px] ${showThumbnails ? 'bg-primary/10 text-primary border-primary/20' : 'text-muted-foreground hover:text-foreground border-white/20 dark:border-white/10'}`}
         >
           <LayoutGrid size={16} className="sm:hidden" />
           <LayoutGrid size={18} className="hidden sm:block" />
@@ -385,7 +397,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
         {mounted && (
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="h-10 w-10 sm:h-12 sm:w-12 glass flex rounded-2xl items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-300 shadow-xl border border-border/40 hover:scale-105 active:scale-95"
+            className="h-10 w-10 sm:h-12 sm:w-12 glass flex rounded-2xl items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 dark:border-white/10 hover:scale-105 active:scale-95 backdrop-blur-[40px]"
           >
             {theme === 'dark' ? <Sun size={16} className="text-yellow-500 sm:hidden" /> : <Moon size={16} className="text-blue-500 sm:hidden" />}
             {theme === 'dark' ? <Sun size={18} className="text-yellow-500 hidden sm:block" /> : <Moon size={18} className="text-blue-500 hidden sm:block" />}
@@ -415,107 +427,316 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
           {/* MODERN THUMBNAIL OVERLAY / SIDEBAR */}
           <AnimatePresence>
             {showThumbnails && (
-              <motion.aside
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-[80] bg-background/95 backdrop-blur-3xl flex flex-col pt-8 pointer-events-auto lg:relative lg:z-40 lg:inset-auto lg:w-[260px] lg:bg-background/80 lg:border-r lg:border-border/30 lg:pt-24 lg:shadow-none"
-              >
-                <div className="px-6 mb-6 flex items-center justify-between">
-                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-foreground/50">Aperçu ({numPages})</span>
-                  <button onClick={() => setShowThumbnails(false)} className="lg:hidden h-10 w-10 bg-foreground/10 flex items-center justify-center rounded-2xl active:scale-90 transition"><X size={18} /></button>
-                </div>
-                <div className="flex-1 overflow-y-auto px-4 pb-32 no-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-4 lg:gap-4 content-start">
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <div
-                      key={`thumb_${index}`}
-                      onClick={() => {
-                        const pages = containerRef.current?.querySelectorAll(".react-pdf__Page");
-                        pages?.[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if (window.innerWidth < 1024) setShowThumbnails(false);
-                      }}
-                      className="group relative cursor-pointer"
-                    >
-                      <div className={`aspect-[1/1.414] rounded-lg overflow-hidden transition-all duration-300 flex items-center justify-center bg-white ${pageNumber === index + 1 ? 'ring-2 ring-primary shadow-2xl scale-[0.98]' : 'ring-1 ring-border/20 shadow-md group-hover:shadow-xl group-hover:-translate-y-1'}`}>
-                        <Page
-                          pageNumber={index + 1}
-                          width={200}
-                          renderTextLayer={false}
-                          renderAnnotationLayer={false}
-                          className="w-full h-full object-cover"
-                          loading={
-                            <div className="w-full h-full bg-foreground/[0.03] animate-pulse flex items-center justify-center">
-                              <Loader2 className="w-4 h-4 text-foreground/20 animate-spin" />
-                            </div>
-                          }
-                        />
+              <>
+                {/* MOBILE: Premium Bottom-Sheet Drawer */}
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[79] bg-black/20 backdrop-blur-sm pointer-events-auto lg:hidden"
+                  onClick={() => setShowThumbnails(false)}
+                />
+                <motion.aside
+                  initial={{ opacity: 0, y: '100%' }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: '100%' }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  drag="y"
+                  dragControls={sheetDragControls}
+                  dragListener={false}
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={{ top: 0, bottom: 0.6 }}
+                  onDragEnd={(_e, info) => {
+                    if (info.offset.y > 80 || info.velocity.y > 200) {
+                      setShowThumbnails(false);
+                    }
+                  }}
+                  className="fixed bottom-0 left-0 right-0 z-[80] max-h-[72vh] bg-background/80 backdrop-blur-[60px] border-t border-white/20 dark:border-white/10 rounded-t-[2rem] flex flex-col pointer-events-auto lg:hidden shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.5)] overflow-hidden"
+                >
+                  {/* Subtle Grid Background for mobile drawer */}
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0v40H0V0h40zM39 1H1v38h39V1z' fill='currentColor' fill-rule='evenodd'/%3E%3C/svg%3E")` }} />
+
+                  {/* Drag Handle — swipe down to dismiss */}
+                  <div
+                    className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none relative z-10"
+                    onPointerDown={(e) => sheetDragControls.start(e)}
+                    style={{ touchAction: 'none' }}
+                  >
+                    <div className="w-12 h-1.5 bg-foreground/25 rounded-full transition-colors active:bg-foreground/40" />
+                  </div>
+
+                  {/* Header */}
+                  <div className="px-5 py-3 flex items-center justify-between border-b border-foreground/5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <LayoutGrid size={14} className="text-primary" />
                       </div>
-                      {/* Center Hover page number indicator */}
-                      <div className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-opacity duration-300 ${pageNumber === index + 1 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        <div className={`px-4 py-2 rounded-full shadow-2xl text-[10px] sm:text-xs font-black tracking-widest uppercase backdrop-blur-md ${pageNumber === index + 1 ? 'bg-primary text-primary-foreground' : 'bg-black/60 text-white'}`}>
-                          Page {index + 1}
-                        </div>
+                      <div>
+                        <span className="text-[11px] font-black uppercase tracking-[0.15em] text-foreground/80">Aperçu</span>
+                        <span className="text-[10px] text-foreground/40 ml-2 font-bold">{numPages} pages</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </motion.aside>
+                    <button onClick={() => setShowThumbnails(false)} className="h-9 w-9 bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center rounded-xl active:scale-90 transition-all">
+                      <X size={16} className="text-foreground/60" />
+                    </button>
+                  </div>
+
+                  {/* Thumbnail Grid */}
+                  <div className="flex-1 overflow-y-auto px-3 py-4 pb-[env(safe-area-inset-bottom,24px)] no-scrollbar grid grid-cols-3 gap-3 content-start">
+                    {Array.from(new Array(numPages), (el, index) => (
+                      <motion.div
+                        key={`thumb_m_${index}`}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.4), ease: [0.16, 1, 0.3, 1] }}
+                        onClick={() => {
+                          const pages = containerRef.current?.querySelectorAll(".react-pdf__Page");
+                          pages?.[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          setShowThumbnails(false);
+                        }}
+                        className="group relative cursor-pointer flex flex-col items-center"
+                      >
+                        <div className={`w-full aspect-[1/1.414] rounded-xl overflow-hidden transition-all duration-300 flex items-center justify-center bg-white dark:bg-white relative ${pageNumber === index + 1 ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_8px_28px_rgba(0,0,0,0.14)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.45)] scale-[0.97]' : 'border border-black/8 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.06)] group-active:scale-[0.95] group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.1)]'}`}>
+                          <Page
+                            pageNumber={index + 1}
+                            width={220}
+                            renderTextLayer={false}
+                            renderAnnotationLayer={false}
+                            className="w-full h-full object-cover"
+                            loading={
+                              <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-100 dark:to-slate-200 relative overflow-hidden">
+                                <div className="absolute inset-0 shimmer-sweep" />
+                                <FileText className="w-5 h-5 text-slate-300" />
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="w-12 h-1 bg-slate-200 rounded-full" />
+                                  <div className="w-8 h-1 bg-slate-200 rounded-full" />
+                                </div>
+                              </div>
+                            }
+                          />
+                          {/* Active check badge */}
+                          {pageNumber === index + 1 && (
+                            <div className="absolute top-1.5 right-1.5 h-5 w-5 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
+                              <Check size={10} className="text-primary-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <span className={`mt-2 text-[10px] font-bold tracking-wide transition-colors ${pageNumber === index + 1 ? 'text-primary font-black' : 'text-foreground/40 group-hover:text-foreground/60'}`}>
+                          {index + 1}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.aside>
+
+                {/* DESKTOP: Refined Sidebar */}
+                <motion.aside
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="hidden lg:flex relative z-40 w-[260px] flex-col pt-24 transition-all duration-500 overflow-hidden"
+                >
+                  {/* Background: solid left fading to transparent right */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to right, hsl(var(--background) / 0.6) 0%, hsl(var(--background) / 0.35) 60%, transparent 100%)' }} />
+                  <div className="absolute inset-0 pointer-events-none backdrop-blur-[60px]" style={{ maskImage: 'linear-gradient(to right, black 0%, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, black 50%, transparent 100%)' }} />
+
+                  {/* Subtle Grid Background for sidebar */}
+                  <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0v40H0V0h40zM39 1H1v38h39V1z' fill='currentColor' fill-rule='evenodd'/%3E%3C/svg%3E")`, maskImage: 'linear-gradient(to right, black 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, transparent 100%)' }} />
+
+                  {/* Soft right edge fade line */}
+                  <div className="absolute inset-y-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-foreground/[0.04] to-transparent" />
+
+                  {/* Header */}
+                  <div className="px-5 pb-4 flex items-center gap-2.5 relative z-10">
+                    <div className="h-7 w-7 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <LayoutGrid size={12} className="text-primary" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/45">Aperçu</span>
+                    <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded-md font-black text-primary ml-auto">{numPages}</span>
+                  </div>
+
+                  {/* Thumbnails */}
+                  <div className="flex-1 overflow-y-auto px-3 pb-28 no-scrollbar flex flex-col gap-2 content-start">
+                    {Array.from(new Array(numPages), (el, index) => (
+                      <motion.div
+                        key={`thumb_d_${index}`}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.35, delay: Math.min(index * 0.06, 0.5), ease: [0.16, 1, 0.3, 1] }}
+                        onClick={() => {
+                          const pages = containerRef.current?.querySelectorAll(".react-pdf__Page");
+                          pages?.[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        className={`group relative cursor-pointer flex items-center gap-3 p-2 rounded-xl transition-all duration-300 ${pageNumber === index + 1 ? 'bg-primary/5 dark:bg-primary/8' : 'hover:bg-foreground/[0.03]'}`}
+                      >
+                        {/* Active indicator bar */}
+                        <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-full transition-all duration-300 ${pageNumber === index + 1 ? 'h-10 bg-primary' : 'h-0 bg-transparent'}`} />
+
+                        <div className={`w-[80px] shrink-0 aspect-[1/1.414] rounded-lg overflow-hidden transition-all duration-300 flex items-center justify-center bg-white dark:bg-white relative ${pageNumber === index + 1 ? 'ring-[1.5px] ring-primary shadow-[0_6px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.35)]' : 'border border-black/6 dark:border-white/8 shadow-[0_1px_4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] group-hover:-translate-y-0.5'}`}>
+                          <Page
+                            pageNumber={index + 1}
+                            width={200}
+                            renderTextLayer={false}
+                            renderAnnotationLayer={false}
+                            className="w-full h-full object-cover"
+                            loading={
+                              <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-100 dark:to-slate-200 relative overflow-hidden">
+                                <div className="absolute inset-0 shimmer-sweep" />
+                                <FileText className="w-4 h-4 text-slate-300" />
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <div className="w-8 h-0.5 bg-slate-200 rounded-full" />
+                                  <div className="w-6 h-0.5 bg-slate-200 rounded-full" />
+                                </div>
+                              </div>
+                            }
+                          />
+                        </div>
+
+                        <div className="flex flex-col min-w-0">
+                          <span className={`text-[11px] font-bold transition-colors ${pageNumber === index + 1 ? 'text-primary font-extrabold' : 'text-foreground/55 group-hover:text-foreground/75'}`}>
+                            Page {index + 1}
+                          </span>
+                          {pageNumber === index + 1 && (
+                            <span className="text-[9px] text-primary/50 font-semibold mt-0.5 flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                              Lecture en cours
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.aside>
+              </>
             )}
           </AnimatePresence>
-
-          {/* MAIN PDF CANVAS */}
           <main
             ref={containerRef}
             onMouseDown={handleDragScroll}
             onTouchEnd={handleTouchEnd}
-            className={`flex-1 relative overflow-auto no-scrollbar scroll-smooth bg-muted/20 transition-colors duration-500 ${dragMode ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
+            className={`flex-1 relative overflow-auto no-scrollbar scroll-smooth bg-slate-50 dark:bg-[#050505] transition-colors duration-700 ${dragMode ? "cursor-grab active:cursor-grabbing select-none" : "cursor-default"}`}
           >
-            {/* Elegant Background Pattern */}
-            <div className="absolute inset-0 z-0 pointer-events-none opacity-20 dark:opacity-10 h-full min-h-[200vh] w-full" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, var(--foreground) 1px, transparent 0)", backgroundSize: "32px 32px" }}></div>
+            <div className={`min-h-full py-20 sm:py-28 px-[10px] sm:px-12 flex flex-col items-center relative z-10 ${dragMode ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+              {/* Cinematic Background & Grid (Expansion-aware) */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden z-[-1]">
+                {/* Dynamic Aura Orbs with Floating Animation */}
+                <motion.div
+                  animate={{
+                    x: [0, 40, 0],
+                    y: [0, -60, 0],
+                    rotate: [0, 10, 0]
+                  }}
+                  transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute top-[-5%] left-[-15%] w-[110vw] h-[110vw] rounded-full bg-orange-500/15 dark:bg-orange-500/20 blur-[140px] mix-blend-normal opacity-80"
+                />
+                <motion.div
+                  animate={{
+                    x: [0, -60, 0],
+                    y: [0, 30, 0],
+                    rotate: [0, -10, 0]
+                  }}
+                  transition={{ duration: 40, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                  className="absolute top-[30%] right-[-15%] w-[90vw] h-[90vw] rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 blur-[120px] mix-blend-normal opacity-50"
+                />
+                <motion.div
+                  animate={{
+                    x: [30, 70, 30],
+                    y: [0, 40, 0]
+                  }}
+                  transition={{ duration: 45, repeat: Infinity, ease: "easeInOut", delay: 5 }}
+                  className="absolute bottom-[10%] left-[5%] w-[100vw] h-[100vw] rounded-full bg-blue-600/15 dark:bg-blue-600/20 blur-[150px] mix-blend-normal opacity-70"
+                />
 
-            <div className="min-h-full py-28 px-4 sm:px-12 flex flex-col items-center pointer-events-auto relative z-10">
+                {/* Fine Repeating Grid Pattern */}
+                <div
+                  className="absolute inset-0 opacity-[0.06] dark:hidden h-full w-full"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 0v60H0V0h60zM59 1H1v58h58V1z' fill='%23000000' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'repeat'
+                  }}
+                />
+                <div
+                  className="absolute inset-0 opacity-[0.03] hidden dark:block h-full w-full"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 0v60H0V0h60zM59 1H1v58h58V1z' fill='%23ffffff' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'repeat'
+                  }}
+                />
+              </div>
+
               <AnimatePresence mode="popLayout">
-                {Array.from(new Array(numPages), (el, index) => (
-                  <motion.div
-                    key={`page_${index + 1}`}
-                    initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-8 relative group"
-                  >
-                    <div className="shadow-xl dark:shadow-black border-none rounded-xl overflow-hidden bg-white ring-1 ring-border/20 transition-shadow hover:shadow-2xl">
-                      {/* Apply baseWidth fixed strictly, let scale multiply the native canvas internally via react-pdf */}
-                      <Page
-                        pageNumber={index + 1}
-                        width={baseWidth}
-                        scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        className="transition-transform duration-300 ease-out"
-                        loading={<div className="animate-pulse bg-muted w-full aspect-[1/1.414]" />}
+                {Array.from(new Array(numPages), (el, index) => {
+                  // Ambient color palette — cycles through warm/cool tones per page
+                  const ambientColors = [
+                    { light: 'rgba(251,146,60,0.12)', dark: 'rgba(251,146,60,0.18)' },   // orange
+                    { light: 'rgba(52,211,153,0.10)', dark: 'rgba(52,211,153,0.15)' },    // emerald
+                    { light: 'rgba(96,165,250,0.12)', dark: 'rgba(96,165,250,0.18)' },    // blue
+                    { light: 'rgba(192,132,252,0.10)', dark: 'rgba(167,139,250,0.15)' },  // violet
+                    { light: 'rgba(251,113,133,0.10)', dark: 'rgba(251,113,133,0.15)' },  // rose
+                  ];
+                  const ambient = ambientColors[index % ambientColors.length];
+
+                  return (
+                    <motion.div
+                      key={`page_${index + 1}`}
+                      initial={{ opacity: 0, y: 50, scale: 0.96 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: Math.min(index * 0.05, 0.3) }}
+                      className="mb-8 sm:mb-12 relative group"
+                    >
+                      {/* Per-page ambient glow */}
+                      <div
+                        className="absolute -inset-8 sm:-inset-12 rounded-[3rem] blur-[60px] sm:blur-[80px] opacity-70 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none z-0"
+                        style={{ background: `radial-gradient(ellipse at center, var(--ambient-color) 0%, transparent 70%)`, ['--ambient-color' as string]: ambient.light }}
                       />
-                    </div>
-                  </motion.div>
-                ))}
+                      <div
+                        className="absolute -inset-8 sm:-inset-12 rounded-[3rem] blur-[60px] sm:blur-[80px] opacity-0 dark:opacity-70 dark:group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none z-0"
+                        style={{ background: `radial-gradient(ellipse at center, ${ambient.dark} 0%, transparent 70%)` }}
+                      />
+
+                      <div className="relative z-10 shadow-[0_0_40px_rgba(0,0,0,0.06)] dark:shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-black/5 dark:border-white/10 rounded-sm overflow-hidden bg-white transition-all duration-700 ease-out group-hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.18)] dark:group-hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.7)] group-hover:-translate-y-1 sm:group-hover:-translate-y-2 group-hover:scale-[1.005] sm:group-hover:scale-[1.01]">
+                        {/* Apply baseWidth fixed strictly, let scale multiply the native canvas internally via react-pdf */}
+                        <Page
+                          pageNumber={index + 1}
+                          width={baseWidth}
+                          scale={scale}
+                          renderTextLayer={true}
+                          renderAnnotationLayer={true}
+                          className="transition-transform duration-300 ease-out"
+                          loading={
+                            <div className="w-full aspect-[1/1.414] bg-gradient-to-b from-slate-50 to-slate-100 dark:from-neutral-900 dark:to-neutral-950 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+                              <div className="absolute inset-0 shimmer-sweep" />
+                              <FileText className="w-8 h-8 text-slate-200 dark:text-neutral-700" />
+                              <div className="flex flex-col items-center gap-1.5">
+                                <div className="w-20 h-1.5 bg-slate-200 dark:bg-neutral-700 rounded-full" />
+                                <div className="w-14 h-1.5 bg-slate-200 dark:bg-neutral-700 rounded-full" />
+                                <div className="w-10 h-1.5 bg-slate-100 dark:bg-neutral-800 rounded-full" />
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-300 dark:text-neutral-600 uppercase tracking-widest mt-1">Page {index + 1}</span>
+                            </div>
+                          }
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           </main>
         </Document>
       )}
 
-      {/* =========================================================================
-          UNIFIED GLASSMORPHISM COMMAND BAR (BOTTOM)
-          ========================================================================= */}
       <AnimatePresence>
         {!isPrinting && pdfUrl && (
           <motion.div
             initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-6 inset-x-0 z-[60] flex flex-col items-center pointer-events-none px-4"
+            className="fixed bottom-3 sm:bottom-6 inset-x-0 z-[60] flex flex-col items-center pointer-events-none px-2 sm:px-4"
           >
 
-            {/* Share / Export Popover Layer */}
+            {/* Share / Export Popover Layer — desktop: popover, mobile: handled in dedicated bottom-sheet below */}
             <AnimatePresence>
               {isShareMenuOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="w-full max-w-sm glass rounded-[2rem] p-5 shadow-2xl pointer-events-auto border border-border/40 mb-3"
+                  className="hidden sm:block w-full max-w-sm glass rounded-[2rem] p-5 shadow-2xl pointer-events-auto border border-border/40 mb-3"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary">Export Options</span>
@@ -537,25 +758,21 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
                 </motion.div>
               )}
             </AnimatePresence>
-
-
-            {/* The Main Pill */}
-            {/* sm:overflow-visible is CRITICAL here so the desktop Zoom Popover can break out of the pill box without being clipped! */}
-            <div className="glass rounded-full p-1.5 flex items-center shadow-2xl pointer-events-auto border border-border/20 backdrop-blur-3xl overflow-x-auto sm:overflow-visible max-w-full no-scrollbar">
+            <div className="glass rounded-[1.25rem] sm:rounded-[2rem] p-1 sm:p-1.5 flex items-center shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.6)] pointer-events-auto border border-white/30 dark:border-white/10 backdrop-blur-[60px] overflow-x-auto sm:overflow-visible max-w-full no-scrollbar transition-shadow duration-500 hover:shadow-[0_30px_80px_-10px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_30px_80px_-10px_rgba(0,0,0,0.8)] gap-0.5 sm:gap-0">
 
               {/* Zoom Group */}
-              <div className="flex items-center shrink-0 bg-background/40 dark:bg-background/20 rounded-full p-1 border border-border/10 relative">
-                <button onClick={() => setScale(p => Math.max(0.4, p - 0.2))} className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Zoom Out"><ZoomOut size={14} className="sm:w-4 sm:h-4" /></button>
+              <div className="flex items-center shrink-0 bg-white/40 dark:bg-black/40 rounded-full p-0.5 sm:p-1 border border-black/5 dark:border-white/5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] relative">
+                <button onClick={() => setScale(p => Math.max(0.4, p - 0.2))} className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Zoom Out"><ZoomOut size={13} className="sm:w-4 sm:h-4" /></button>
 
                 {/* Zoom Preset Trigger */}
                 <button
                   onClick={() => setIsZoomMenuOpen(!isZoomMenuOpen)}
-                  className={`w-14 sm:w-16 h-9 sm:h-10 flex items-center justify-center rounded-full transition-colors hover:bg-background/80 ${isZoomMenuOpen ? 'bg-background shadow-inner' : ''}`}
+                  className={`w-11 sm:w-16 h-8 sm:h-10 flex items-center justify-center rounded-full transition-colors hover:bg-background/80 ${isZoomMenuOpen ? 'bg-background shadow-inner' : ''}`}
                 >
-                  <span className="text-[11px] sm:text-[12px] font-black font-mono tracking-tighter">{Math.round(scale * 100)}%</span>
+                  <span className="text-[10px] sm:text-[12px] font-black font-mono tracking-tighter">{Math.round(scale * 100)}%</span>
                 </button>
 
-                <button onClick={() => setScale(p => Math.min(2.5, p + 0.2))} className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Zoom In"><ZoomIn size={14} className="sm:w-4 sm:h-4" /></button>
+                <button onClick={() => setScale(p => Math.min(2.5, p + 0.2))} className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Zoom In"><ZoomIn size={13} className="sm:w-4 sm:h-4" /></button>
 
                 {/* ZOOM DROPDOWN POPOVER (DESKTOP ONLY) */}
                 <AnimatePresence>
@@ -595,32 +812,38 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
               </div>
 
               {/* Cursor Modes */}
-              <div className="hidden sm:flex shrink-0 items-center bg-background/40 dark:bg-background/20 rounded-full p-1 ml-2 border border-border/10">
+              <div className="hidden sm:flex shrink-0 items-center bg-white/40 dark:bg-black/40 rounded-full p-1 ml-2 border border-black/5 dark:border-white/5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]">
                 <button onClick={() => setDragMode(false)} className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${!dragMode ? 'bg-primary text-primary-foreground shadow-sm scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-background'}`} title="Select Text"><MousePointer2 size={16} /></button>
                 <button onClick={() => setDragMode(true)} className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${dragMode ? 'bg-primary text-primary-foreground shadow-sm scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-background'}`} title="Pan / Grab"><Hand size={16} /></button>
               </div>
 
-              <div className="w-[1px] h-6 bg-border mx-2 shrink-0" />
+              <div className="w-[1px] h-5 sm:h-6 bg-border mx-1 sm:mx-2 shrink-0" />
 
               {/* Counter Indicator */}
-              <div className="px-1 sm:px-2 flex items-center justify-center shrink-0">
-                <span className="text-[10px] sm:text-xs font-black font-mono">{pageNumber} <span className="opacity-40 font-bold">/ {numPages}</span></span>
+              <div className="px-2 sm:px-4 flex items-center justify-center shrink-0 h-10 group/counter">
+                <div className="flex items-center gap-2 bg-foreground/[0.03] dark:bg-white/5 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5 transition-colors group-hover/counter:border-primary/20">
+                  <span className="text-[10px] sm:text-[11px] font-black font-mono text-primary flex items-center gap-1.5">
+                    {pageNumber}
+                  </span>
+                  <div className="w-[1px] h-3 bg-foreground/10 dark:bg-white/10" />
+                  <span className="text-[10px] sm:text-[11px] font-black font-mono text-foreground/30">{numPages}</span>
+                </div>
               </div>
 
-              <div className="w-[1px] h-6 bg-border mx-2 shrink-0" />
+              <div className="w-[1px] h-5 sm:h-6 bg-border mx-1 sm:mx-2 shrink-0" />
 
               {/* Primary Actions Workspace */}
-              <div className="flex shrink-0 items-center gap-1 bg-background/40 dark:bg-background/20 rounded-full p-1 border border-border/10">
-                <button onClick={() => { setScale(1.0); }} className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Reset Zoom / Fit"><Maximize2 size={14} className="sm:w-4 sm:h-4" /></button>
+              <div className="flex shrink-0 items-center gap-0.5 sm:gap-1 bg-white/40 dark:bg-black/40 rounded-full p-0.5 sm:p-1 border border-black/5 dark:border-white/5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]">
+                <button onClick={() => { setScale(1.0); }} className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Reset Zoom / Fit"><Maximize2 size={13} className="sm:w-4 sm:h-4" /></button>
                 <button onClick={handlePrint} className="hidden lg:flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Print Quality PDF"><Printer size={16} /></button>
                 <button onClick={handleDownload} className="hidden lg:flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Download Document"><Download size={16} /></button>
-                <button onClick={() => setIsShareMenuOpen(!isShareMenuOpen)} className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full transition active:scale-90 ${isShareMenuOpen ? 'bg-primary text-primary-foreground shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-background'}`} title="Share Document">
-                  <Share2 size={14} className="sm:w-4 sm:h-4" />
+                <button onClick={() => setIsShareMenuOpen(!isShareMenuOpen)} className={`h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full transition active:scale-90 ${isShareMenuOpen ? 'bg-primary text-primary-foreground shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-background'}`} title="Share Document">
+                  <Share2 size={13} className="sm:w-4 sm:h-4" />
                 </button>
 
                 {/* Mobile Overflow Menu */}
-                <button onClick={() => setIsMoreMenuOpen(true)} className="lg:hidden h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90">
-                  <MoreHorizontal size={16} className="sm:w-4 sm:h-4" />
+                <button onClick={() => setIsMoreMenuOpen(true)} className="lg:hidden h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90">
+                  <MoreHorizontal size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
@@ -629,64 +852,142 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
         )}
       </AnimatePresence>
 
+      {/* MOBILE: Document Actions Bottom Sheet */}
       <AnimatePresence>
         {isMoreMenuOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-background/60 backdrop-blur-md z-[100] p-4 flex items-end sm:hidden pointer-events-auto">
-            <motion.div initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }} className="w-full glass rounded-[2rem] p-5 shadow-2xl border border-border/40 pointer-events-auto">
-              <div className="flex justify-between items-center mb-6">
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] sm:hidden pointer-events-auto" onClick={() => setIsMoreMenuOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              drag="y"
+              dragControls={moreDragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_e, info) => { if (info.offset.y > 80 || info.velocity.y > 200) setIsMoreMenuOpen(false); }}
+              className="fixed bottom-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-[60px] rounded-t-[2rem] border-t border-white/20 dark:border-white/10 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.5)] p-5 pt-0 sm:hidden pointer-events-auto"
+            >
+              <div className="flex justify-center pt-3 pb-2 select-none" onPointerDown={(e) => moreDragControls.start(e)} style={{ touchAction: 'none' }}>
+                <div className="w-12 h-1.5 bg-foreground/25 rounded-full transition-colors active:bg-foreground/40" />
+              </div>
+              <div className="flex justify-between items-center mb-5">
                 <span className="text-[10px] font-black uppercase tracking-widest">Document Actions</span>
-                <button onClick={() => setIsMoreMenuOpen(false)} className="h-8 w-8 bg-foreground/10 flex items-center justify-center rounded-xl"><X size={16} /></button>
+                <button onClick={() => setIsMoreMenuOpen(false)} className="h-8 w-8 bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center rounded-xl transition-all"><X size={14} className="text-foreground/60" /></button>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <button onClick={() => { handlePrint(); setIsMoreMenuOpen(false); }} className="h-12 glass border border-border/30 rounded-2xl flex items-center gap-3 px-4 active:scale-95 transition"><Printer size={16} className="text-primary" /> <span className="text-[10px] font-black uppercase tracking-widest">Print</span></button>
-                <button onClick={() => { handleDownload(); setIsMoreMenuOpen(false); }} className="h-12 glass border border-border/30 rounded-2xl flex items-center gap-3 px-4 active:scale-95 transition"><Download size={16} className="text-primary" /> <span className="text-[10px] font-black uppercase tracking-widest">Export</span></button>
+                <button onClick={() => { handlePrint(); setIsMoreMenuOpen(false); }} className="h-14 bg-foreground/[0.03] border border-border/30 rounded-2xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition"><Printer size={18} className="text-primary" /> <span className="text-[9px] font-black uppercase tracking-widest">Imprimer</span></button>
+                <button onClick={() => { handleDownload(); setIsMoreMenuOpen(false); }} className="h-14 bg-foreground/[0.03] border border-border/30 rounded-2xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition"><Download size={18} className="text-primary" /> <span className="text-[9px] font-black uppercase tracking-widest">Exporter</span></button>
               </div>
-              <div className="glass border border-border/30 rounded-2xl p-4 flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Interaction Mode</span>
-                <div className="flex bg-foreground/10 p-1 rounded-xl">
-                  <button onClick={() => setDragMode(false)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${!dragMode ? 'bg-primary text-primary-foreground shadow-sm' : ''}`}><MousePointer2 size={12} /></button>
-                  <button onClick={() => setDragMode(true)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${dragMode ? 'bg-primary text-primary-foreground shadow-sm' : ''}`}><Hand size={12} /></button>
+              <div className="bg-foreground/[0.02] border border-border/30 rounded-2xl p-4 flex justify-between items-center">
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-50">Mode Interaction</span>
+                <div className="flex bg-foreground/5 p-1 rounded-xl gap-0.5">
+                  <button onClick={() => setDragMode(false)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${!dragMode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground/50'}`}><MousePointer2 size={12} /></button>
+                  <button onClick={() => setDragMode(true)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${dragMode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground/50'}`}><Hand size={12} /></button>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
 
+      {/* MOBILE: Export / Share Bottom Sheet */}
+      <AnimatePresence>
+        {isShareMenuOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] sm:hidden pointer-events-auto" onClick={() => setIsShareMenuOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              drag="y"
+              dragControls={shareDragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_e, info) => { if (info.offset.y > 80 || info.velocity.y > 200) setIsShareMenuOpen(false); }}
+              className="fixed bottom-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-[60px] rounded-t-[2rem] border-t border-white/20 dark:border-white/10 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.5)] p-5 pt-0 sm:hidden pointer-events-auto"
+            >
+              <div className="flex justify-center pt-3 pb-2 select-none" onPointerDown={(e) => shareDragControls.start(e)} style={{ touchAction: 'none' }}>
+                <div className="w-12 h-1.5 bg-foreground/25 rounded-full transition-colors active:bg-foreground/40" />
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Partager</span>
+                <button onClick={() => setIsShareMenuOpen(false)} className="h-8 w-8 bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center rounded-xl transition-all"><X size={14} className="text-foreground/60" /></button>
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 mb-4 max-w-[160px] mx-auto shadow-inner">
+                <img src={qrDataUrl} alt="QR" className="w-full h-auto" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={handleShare} className="h-12 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-xl hover:brightness-110 flex items-center justify-center gap-2 transition active:scale-95">
+                  <Share2 size={14} /> Envoyer
+                </button>
+                <button onClick={handleCopy} className="h-12 border border-border/50 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-foreground/5 flex items-center justify-center gap-2 transition active:scale-95">
+                  {copied ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Copy size={14} />} Copier
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* MOBILE: Zoom Level Bottom Sheet */}
       <AnimatePresence>
         {isZoomMenuOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-background/80 backdrop-blur-md z-[100] p-4 flex items-end sm:hidden pointer-events-auto" onClick={() => setIsZoomMenuOpen(false)}>
-            <motion.div initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }} onClick={(e) => e.stopPropagation()} className="w-full glass rounded-[2rem] p-6 shadow-2xl border border-border/40 pointer-events-auto flex flex-col gap-2">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[11px] font-black uppercase tracking-widest text-primary">Niveau de Zoom</span>
-                <button onClick={() => setIsZoomMenuOpen(false)} className="h-10 w-10 bg-foreground/10 flex items-center justify-center rounded-2xl"><X size={16} /></button>
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] sm:hidden pointer-events-auto" onClick={() => setIsZoomMenuOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              drag="y"
+              dragControls={zoomDragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_e, info) => { if (info.offset.y > 80 || info.velocity.y > 200) setIsZoomMenuOpen(false); }}
+              onClick={(e) => e.stopPropagation()}
+              className="fixed bottom-0 left-0 right-0 z-[100] bg-background/80 backdrop-blur-[60px] rounded-t-[2rem] border-t border-white/20 dark:border-white/10 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.5)] p-5 pt-0 sm:hidden pointer-events-auto flex flex-col gap-2"
+            >
+              <div className="flex justify-center pt-3 pb-2 select-none" onPointerDown={(e) => zoomDragControls.start(e)} style={{ touchAction: 'none' }}>
+                <div className="w-12 h-1.5 bg-foreground/25 rounded-full transition-colors active:bg-foreground/40" />
+              </div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Niveau de Zoom</span>
+                <button onClick={() => setIsZoomMenuOpen(false)} className="h-8 w-8 bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center rounded-xl transition-all"><X size={14} className="text-foreground/60" /></button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-2">
-                <button onClick={() => { handleFitToWidth(); setIsZoomMenuOpen(false); }} className="h-16 glass rounded-2xl border border-border/30 text-[10px] font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 active:scale-95 transition hover:bg-foreground/5">
-                  <ArrowLeftRight size={18} className="text-primary/60" />
-                  Ajuster Largeur
+                <button onClick={() => { handleFitToWidth(); setIsZoomMenuOpen(false); }} className="h-14 bg-foreground/[0.03] rounded-2xl border border-border/30 text-[9px] font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+                  <ArrowLeftRight size={16} className="text-primary/60" />
+                  Largeur
                 </button>
-                <button onClick={() => { handleFitToHeight(); setIsZoomMenuOpen(false); }} className="h-16 glass rounded-2xl border border-border/30 text-[10px] font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 active:scale-95 transition hover:bg-foreground/5">
-                  <ArrowUpDown size={18} className="text-primary/60" />
-                  Ajuster Hauteur
+                <button onClick={() => { handleFitToHeight(); setIsZoomMenuOpen(false); }} className="h-14 bg-foreground/[0.03] rounded-2xl border border-border/30 text-[9px] font-black uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+                  <ArrowUpDown size={16} className="text-primary/60" />
+                  Hauteur
                 </button>
               </div>
 
-              <button onClick={() => { setScale(1.0); setIsZoomMenuOpen(false); }} className={`w-full h-14 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition flex items-center justify-center gap-3 mb-2 ${scale === 1.0 ? 'bg-primary text-primary-foreground shadow-xl' : 'glass border border-border/50 text-foreground hover:bg-foreground/5'}`}>
-                <Maximize2 size={16} className={scale === 1.0 ? "opacity-80" : "text-primary"} />
-                Vue Standard (100%)
+              <button onClick={() => { setScale(1.0); setIsZoomMenuOpen(false); }} className={`w-full h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition flex items-center justify-center gap-2.5 mb-2 ${scale === 1.0 ? 'bg-primary text-primary-foreground shadow-xl' : 'bg-foreground/[0.03] border border-border/40 text-foreground'}`}>
+                <Maximize2 size={14} className={scale === 1.0 ? "opacity-80" : "text-primary"} />
+                Standard (100%)
               </button>
 
               <div className="grid grid-cols-5 gap-2">
                 {[0.5, 0.75, 1.0, 1.5, 2.0].map((v) => (
-                  <button key={v} onClick={() => { setScale(v); setIsZoomMenuOpen(false); }} className={`h-12 flex items-center justify-center rounded-xl text-[10px] sm:text-xs font-mono font-bold transition active:scale-90 ${scale === v ? 'bg-primary text-primary-foreground shadow-xl ring-2 ring-primary ring-offset-2 ring-offset-background' : 'bg-foreground/5 hover:bg-foreground/10 text-muted-foreground hover:text-foreground'}`}>
+                  <button key={v} onClick={() => { setScale(v); setIsZoomMenuOpen(false); }} className={`h-11 flex items-center justify-center rounded-xl text-[10px] font-mono font-bold transition active:scale-90 ${scale === v ? 'bg-primary text-primary-foreground shadow-lg ring-2 ring-primary ring-offset-2 ring-offset-background' : 'bg-foreground/5 hover:bg-foreground/10 text-muted-foreground'}`}>
                     {v * 100}%
                   </button>
                 ))}
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -714,6 +1015,15 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
         .dark .glass {
           background: rgba(10, 10, 10, 0.6) !important;
           backdrop-filter: blur(24px) saturate(180%) !important;
+        }
+
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .shimmer-sweep {
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+          animation: shimmer 1.8s ease-in-out infinite;
         }
       `}</style>
     </div>

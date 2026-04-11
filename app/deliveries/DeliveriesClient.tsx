@@ -147,6 +147,7 @@ export default function DeliveriesClient({ deliveries, selectedSite, sites }: Pr
   const [localSearch, setLocalSearch] = useState(search);
   const [preview, setPreview] = useState<{ id: string; title: string; date: string; ref: string; siteName?: string } | null>(null);
   const [showFilters, setShowFilters] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -221,14 +222,56 @@ export default function DeliveriesClient({ deliveries, selectedSite, sites }: Pr
                 </button>
               )}
 
-              <SignOutButton>
-                <button className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition">
-                  <LogOut size={14} /> <span className="hidden sm:inline">Quitter</span>
-                </button>
-              </SignOutButton>
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm"
+              >
+                <LogOut size={14} /> <span className="hidden sm:inline">Quitter</span>
+              </button>
             </div>
          </div>
       </header>
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-card/90 backdrop-blur-3xl border border-border/50 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] rounded-[2rem] p-6 max-w-[320px] w-full flex flex-col items-center text-center"
+            >
+              <div className="h-16 w-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 ring-4 ring-red-500/5">
+                <LogOut size={28} />
+              </div>
+              <h2 className="text-xl font-black mb-2 tracking-tight">Déconnexion</h2>
+              <p className="text-sm text-muted-foreground mb-8 leading-relaxed">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+              
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 h-12 rounded-xl border border-border/50 font-bold hover:bg-muted text-muted-foreground hover:text-foreground transition text-sm flex items-center justify-center"
+                >
+                  Annuler
+                </button>
+                <div className="flex-1">
+                  <SignOutButton>
+                    <button className="w-full h-12 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition shadow-lg shadow-red-500/25 text-sm flex items-center justify-center gap-2 active:scale-95">
+                      <LogOut size={16} /> Quitter
+                    </button>
+                  </SignOutButton>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FILTERS */}
       <AnimatePresence>
