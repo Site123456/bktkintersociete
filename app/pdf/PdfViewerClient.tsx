@@ -290,29 +290,29 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
             onClick={() => router.push("/")}
             className="group flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all"
           >
-            <div className="h-8 w-8 rounded-xl bg-foreground/5 flex items-center justify-center group-hover:bg-foreground/10 group-hover:scale-105 transition">
-              <ChevronLeft size={16} />
+            <div className="h-10 w-10 rounded-full bg-foreground/5 flex items-center justify-center group-hover:bg-foreground/10 group-hover:scale-110 transition-all duration-300 shadow-sm border border-border/5">
+              <ChevronLeft size={18} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden xs:inline">Dash</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden xs:inline opacity-60 group-hover:opacity-100 transition-opacity">Dash</span>
           </button>
 
           <button
             onClick={() => setShowThumbnails(!showThumbnails)}
-            className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${showThumbnails ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-foreground/5 text-muted-foreground hover:text-foreground'}`}
+            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ${showThumbnails ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-foreground/5 text-muted-foreground hover:text-foreground hover:bg-foreground/10'}`}
           >
-            <PanelLeftOpen size={16} />
+            {showThumbnails ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
           </button>
 
           <div className="h-5 w-[1px] bg-border hidden sm:block" />
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 truncate max-w-[80px] sm:max-w-none">{docTitleLabel}</span>
-              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest hidden xs:block ${docType === 'stock' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 truncate max-w-[80px] sm:max-w-none">{docTitleLabel}</span>
+              <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest hidden xs:block ${docType === 'stock' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
                 {docType === 'stock' ? 'Stock' : 'Livraison'}
               </div>
             </div>
-            <span className="text-[10px] font-bold tracking-tight text-foreground/70 uppercase truncate max-w-[100px] sm:max-w-[200px]">
+            <span className="text-[11px] font-black tracking-tight text-foreground uppercase truncate max-w-[100px] sm:max-w-[300px] mt-0.5">
               {siteName}
             </span>
           </div>
@@ -320,39 +320,39 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
 
         <div className="flex items-center gap-2">
           {/* Mode Selector - Desktop Only here */}
-          <div className="hidden sm:flex bg-foreground/5 rounded-xl p-1 border border-border/50 shadow-inner">
+          <div className="hidden sm:flex bg-foreground/5 rounded-full p-1 border border-border/40 shadow-inner">
             <button
               onClick={() => setDragMode(false)}
-              className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${!dragMode ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${!dragMode ? "bg-primary text-primary-foreground shadow-sm scale-110" : "text-muted-foreground hover:text-foreground"}`}
               title="Select Mode"
             >
               <MousePointer2 size={12} />
             </button>
             <button
               onClick={() => setDragMode(true)}
-              className={`h-7 w-7 rounded-lg flex items-center justify-center transition-all ${dragMode ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${dragMode ? "bg-primary text-primary-foreground shadow-sm scale-110" : "text-muted-foreground hover:text-foreground"}`}
               title="Pan Mode"
             >
               <Hand size={12} />
             </button>
           </div>
 
-          <div className="w-[1px] h-5 bg-border/50 mx-1 hidden sm:block" />
+          <div className="w-[1px] h-5 bg-border/40 mx-1 hidden sm:block" />
 
           {mounted && (
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="h-9 w-9 glass rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-all ring-1 ring-border shadow-sm"
+              className="h-10 w-10 glass rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all ring-1 ring-border shadow-md hover:scale-105 active:scale-95"
             >
-              {theme === 'dark' ? <Sun size={14} className="text-yellow-500" /> : <Moon size={14} className="text-blue-500" />}
+              {theme === 'dark' ? <Sun size={15} className="text-yellow-500" /> : <Moon size={15} className="text-blue-500" />}
             </button>
           )}
 
           <button
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            className="h-9 w-9 sm:hidden glass rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-all ring-1 ring-border"
+            className="h-10 w-10 sm:hidden glass rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all ring-1 ring-border shadow-md"
           >
-            <MoreHorizontal size={18} />
+            <MoreHorizontal size={20} />
           </button>
         </div>
       </motion.header>
@@ -748,18 +748,24 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
         
         /* Sidebar Scrollbar */
         aside .overflow-y-auto::-webkit-scrollbar { width: 4px; }
-        aside .overflow-y-auto::-webkit-scrollbar-thumb { background: rgba(var(--primary), 0.1); border-radius: 10px; }
+        aside .overflow-y-auto::-webkit-scrollbar-thumb { background: rgba(var(--primary), 0.15); border-radius: 10px; }
         aside .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 
         .glass {
-          background: rgba(var(--background), 0.5) !important;
-          backdrop-filter: blur(20px) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+          background: rgba(var(--background), 0.4) !important;
+          backdrop-filter: blur(24px) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
         }
 
         .dark .glass {
-          background: rgba(15, 15, 15, 0.6) !important;
+          background: rgba(10, 10, 10, 0.4) !important;
           border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        /* Smooth canvas rendering */
+        canvas {
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
         }
       `}</style>
     </div>
