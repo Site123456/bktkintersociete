@@ -1,11 +1,11 @@
 import QRCode from "qrcode";
-import PdfViewerClient from "./PdfViewerClient";
+import PdfViewerNoSSR from "./PdfViewerNoSSR";
 import connectDB from "@/lib/connectDB";
 import mongoose from "mongoose";
 
 export default async function PdfPage({ searchParams }: { searchParams: { id?: string } }) {
   const { id } = await searchParams; // In Next 15 searchParams is a Promise
-  
+
   if (!id) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
@@ -27,10 +27,10 @@ export default async function PdfPage({ searchParams }: { searchParams: { id?: s
   const ref = delivery?.ref || id.slice(0, 8);
 
   return (
-    <PdfViewerClient 
-      id={id} 
-      shareUrl={shareUrl} 
-      qrDataUrl={qrDataUrl} 
+    <PdfViewerNoSSR
+      id={id}
+      shareUrl={shareUrl}
+      qrDataUrl={qrDataUrl}
       siteName={siteName}
       docType={docType}
       refId={ref}

@@ -4,8 +4,9 @@ import { useUser, SignOutButton } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Search, Calendar, MapPin, FileText, Download, Eye, LogOut, Package, Filter, X, ExternalLink } from "lucide-react";
+import { ChevronLeft, Search, Calendar, MapPin, FileText, Download, Eye, LogOut, Package, Filter, X, ExternalLink, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 
 import {
   Sheet,
@@ -146,6 +147,9 @@ export default function DeliveriesClient({ deliveries, selectedSite, sites }: Pr
   const [localSearch, setLocalSearch] = useState(search);
   const [preview, setPreview] = useState<{ id: string; title: string; date: string; ref: string; siteName?: string } | null>(null);
   const [showFilters, setShowFilters] = useState(true);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   function changeSearch(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -206,6 +210,17 @@ export default function DeliveriesClient({ deliveries, selectedSite, sites }: Pr
                 <Filter size={14} />
                 <span className="hidden sm:inline">Filtres</span>
               </button>
+              
+              {mounted && (
+                <button
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl flex items-center justify-center border border-border/30 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition"
+                  title="Basculer le thème"
+                >
+                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
+              )}
+
               <SignOutButton>
                 <button className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition">
                   <LogOut size={14} /> <span className="hidden sm:inline">Quitter</span>
