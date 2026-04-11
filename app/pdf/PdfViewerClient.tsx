@@ -57,9 +57,24 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [fitToWidth, setFitToWidth] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -167,6 +182,42 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
     }
   };
 
+  const handleDragScroll = (e: React.MouseEvent) => {
+    if (!dragMode || !containerRef.current) return;
+    const container = containerRef.current;
+    
+    const startX = e.pageX - container.offsetLeft;
+    const startY = e.pageY - container.offsetTop;
+    const scrollLeft = container.scrollLeft;
+    const scrollTop = container.scrollTop;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const x = moveEvent.pageX - container.offsetLeft;
+      const y = moveEvent.pageY - container.offsetTop;
+      const walkX = (x - startX);
+      const walkY = (y - startY);
+      container.scrollLeft = scrollLeft - walkX;
+      container.scrollTop = scrollTop - walkY;
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  const [lastTap, setLastTap] = useState(0);
+  const handleTouchEnd = () => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      setScale(prev => prev > 1.0 ? 1.0 : 2.0);
+    }
+    setLastTap(now);
+  };
+
   return (
     <div className="fixed inset-0 bg-background flex flex-col overflow-hidden text-foreground font-sans selection:bg-primary/30">
       {/* PREMIUM HEADER - ULTRA MINIMAL */}
@@ -244,7 +295,9 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
       {/* DOCUMENT ENGINE */}
       <main
         ref={containerRef}
-        className={`flex-1 w-full bg-background relative flex justify-center overflow-auto no-scrollbar scroll-smooth transition-colors duration-500 overflow-x-hidden ${dragMode ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
+        onMouseDown={handleDragScroll}
+        onTouchEnd={handleTouchEnd}
+        className={`flex-1 w-full bg-background relative flex justify-center overflow-auto no-scrollbar scroll-smooth transition-colors duration-500 ${dragMode ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
       >
         <div className="min-h-full pt-20 pb-32 px-4 sm:px-10 flex flex-col items-center">
           {pdfUrl ? (
@@ -292,7 +345,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
                       delay: index < 3 ? index * 0.1 : 0 
                     }}
                     className="mb-12 sm:mb-20 last:mb-0 relative group"
-                    style={{ transformOrigin: "top center", scale }}
+                    style={{ transformOrigin: "top center" }}
                   >
                     {/* Page Shadow Glow */}
                     <div className="absolute -inset-2 bg-primary/5 blur-3xl rounded-full -z-10 group-hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100" />
@@ -300,7 +353,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
                     <div className="shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] dark:shadow-[0_60px_120px_-30px_rgba(0,0,0,0.8)] border border-border/50 rounded-sm overflow-hidden bg-white/5 dark:bg-white/[0.02] backdrop-blur-[2px]">
                       <Page
                         pageNumber={index + 1}
-                        width={typeof window !== "undefined" ? (window.innerWidth < 640 ? window.innerWidth - 32 : Math.min(window.innerWidth * 0.85, 900)) : 800}
+                        width={containerWidth ? (containerWidth - (containerWidth < 640 ? 32 : 80)) * scale : 800}
                         className="transition-all duration-300"
                         loading={<div className="bg-foreground/[0.02] h-[800px] w-full animate-pulse"></div>}
                         renderTextLayer={true}
@@ -390,8 +443,16 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
             <span className="text-[11px] font-black font-mono leading-none">{pageNumber}<span className="opacity-30">/{numPages}</span></span>
           </div>
 
-          <button onClick={resetZoom} className="h-10 px-4 flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all hover:shadow-inner" title="Reset View">
-            <RotateCcw size={13} /> <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Reset</span>
+          <button 
+            onClick={() => {
+              setScale(1.0);
+              const container = containerRef.current;
+              if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+            }} 
+            className="h-10 px-3 sm:px-4 flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all hover:shadow-inner" 
+            title="Reset View / Fit to Width"
+          >
+            <RotateCcw size={13} /> <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Reset</span>
           </button>
 
           <div className="w-[1px] h-6 bg-border/40 mx-1" />
@@ -426,7 +487,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
               className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all ${!isMinimized ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'}`}
               title="Options / QR"
             >
-              {isMinimized ? <ScanLine size={16} /> : <ChevronUp size={16} />}
+              {isMinimized ? <Share2 size={13} /> : <X size={13} />}
             </button>
           </div>
 
