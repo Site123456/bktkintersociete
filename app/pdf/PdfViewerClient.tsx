@@ -133,8 +133,25 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
   const handlePrint = useCallback(async (e?: React.MouseEvent | KeyboardEvent) => {
     if (e) e.preventDefault();
     if (!pdfUrl) return;
+
+    // WebKit/Safari suffers from a known multi-page clipping bug for hidden iframes.
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
     setIsPrinting(true);
     try {
+      if (isSafari) {
+        // Synchronously open tab immediately to bypass popup blocker, then fetch
+        const newWin = window.open("", "_blank");
+        await fetch(pdfUrl);
+        if (newWin) {
+          newWin.location.href = pdfUrl;
+        } else {
+          window.location.href = pdfUrl; // fallback if popup strictly blocked
+        }
+        setIsPrinting(false);
+        return;
+      }
+
       // Pre-fetch to ensure the server has generated the document fully
       await fetch(pdfUrl);
 
