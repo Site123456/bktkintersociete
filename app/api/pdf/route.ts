@@ -464,7 +464,8 @@ export async function GET(req: Request) {
     pdf.setPage(i);
     drawFooter(i, totalPages);
   }
-  const fileName = `bon-de-livraison-${delivery.site?.slug}-${safe(delivery.ref)}.pdf`;
+  const prefix = isStock ? "etat-des-stocks" : "bon-de-livraison";
+  const fileName = `${prefix}-${delivery.site?.slug || "BKTK"}-${safe(delivery.ref)}.pdf`;
   return new NextResponse(pdf.output("arraybuffer"), {
     headers: {
       "Content-Type": "application/pdf",

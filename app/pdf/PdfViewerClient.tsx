@@ -35,9 +35,12 @@ interface Props {
   id: string;
   shareUrl: string;
   qrDataUrl: string;
+  siteName: string;
+  docType: string;
+  refId: string;
 }
 
-export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
+export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, docType, refId }: Props) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
@@ -45,7 +48,9 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
   const [numPages, setNumPages] = useState<number>(0);
   const [scale, setScale] = useState(1.0);
   const [dragMode, setDragMode] = useState(true);
+  const [pageNumber, setPageNumber] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,12 +69,54 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
   
   const handlePrint = () => {
     setIsPrinting(true);
-    // Let the UI state update before printing
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 500);
+    
+    // Create hidden iframe if it doesn't exist
+    let iframe = document.getElementById("pdf-print-iframe") as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "pdf-print-iframe";
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+    }
+
+    iframe.src = pdfUrl;
+    
+    iframe.onload = () => {
+      setTimeout(() => {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }
+        setIsPrinting(false);
+      }, 500);
+    };
   };
+
+  // Keep track of current page on scroll
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const pages = container.querySelectorAll(".react-pdf__Page");
+      let currentPage = 1;
+      
+      pages.forEach((page, index) => {
+        const rect = page.getBoundingClientRect();
+        if (rect.top < window.innerHeight / 2) {
+          currentPage = index + 1;
+        }
+      });
+      
+      setPageNumber(currentPage);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [numPages]);
+
+  const docTitleLabel = docType === "stock" ? "ÉTAT DES STOCKS" : "BON DE LIVRAISON";
+  const downloadName = `${siteName.replace(/\s+/g, "_")}--${refId}.pdf`;
 
   const handleCopy = () => {
     try {
@@ -135,9 +182,11 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <FileText size={10} className="text-primary" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Document</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">{docTitleLabel}</span>
             </div>
-            <span className="text-[8px] font-medium tracking-tight opacity-30 font-mono mt-0.5">{id.slice(0, 12)}...</span>
+            <span className="text-[10px] font-bold tracking-tight text-foreground/70 uppercase truncate max-w-[120px] sm:max-w-none">
+              {siteName}
+            </span>
           </div>
         </div>
 
@@ -304,6 +353,11 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
             </button>
           </div>
 
+          <div className="px-3 flex flex-col items-center justify-center border-x border-border/50">
+            <span className="text-[9px] font-black font-mono tracking-tighter tabular-nums opacity-80">PAGE</span>
+            <span className="text-[10px] font-black font-mono leading-none">{pageNumber}<span className="opacity-30">/{numPages}</span></span>
+          </div>
+
           <button onClick={resetZoom} className="h-9 px-3 flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition" title="Reset View">
             <RotateCcw size={12} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Reset</span>
           </button>
@@ -326,11 +380,11 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
 
             <a 
               href={pdfUrl} 
-              download={`BKTK-${id.slice(0, 6)}.pdf`} 
+              download={downloadName} 
               className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition" 
               title="Download Source"
             >
-              <Download size={12} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Save</span>
+              <Download size={12} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Sauvegarder</span>
             </a>
 
             <div className="w-[1px] h-4 bg-border mx-0.5" />
