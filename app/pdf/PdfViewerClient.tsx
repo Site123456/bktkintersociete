@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Download,
   Share2,
@@ -64,6 +64,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
   const [dragMode, setDragMode] = useState(true);
   const [pageNumber, setPageNumber] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -119,7 +120,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
       // We must be very generous here because we assume A4 ratio. If a PDF is taller, it might bleed out.
       const paddingY = isMobile ? 220 : 260;
       const availableHeight = containerHeight > paddingY ? containerHeight - paddingY : containerHeight;
-      
+
       const pageRatio = 595 / 842; // standard A4 aspect ratio -> w/h
       const heightBasedWidth = availableHeight * pageRatio;
 
@@ -129,22 +130,74 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
     }
   }, [containerWidth, containerHeight, showThumbnails, numPages]);
 
-  const handlePrint = () => {
+  const handlePrint = useCallback(async (e?: React.MouseEvent | KeyboardEvent) => {
+    if (e) e.preventDefault();
+    if (!pdfUrl) return;
     setIsPrinting(true);
-    let iframe = document.getElementById("pdf-print-iframe") as HTMLIFrameElement;
-    if (!iframe) {
+    try {
+      // Pre-fetch to ensure the server has generated the document fully
+      await fetch(pdfUrl);
+
+      let iframe = document.getElementById("pdf-print-iframe") as HTMLIFrameElement;
+      if (iframe) {
+        document.body.removeChild(iframe);
+      }
+
       iframe = document.createElement("iframe");
       iframe.id = "pdf-print-iframe";
       iframe.style.display = "none";
       document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        setTimeout(() => {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }
+          setIsPrinting(false);
+        }, 500);
+      };
+
+      iframe.src = pdfUrl;
+    } catch (error) {
+      console.error(error);
+      setIsPrinting(false);
     }
-    iframe.src = pdfUrl;
-    iframe.onload = () => {
-      setTimeout(() => {
-        if (iframe.contentWindow) { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
-        setIsPrinting(false);
-      }, 500);
+  }, [pdfUrl]);
+
+  // Intercept Ctrl + P to print the high-fidelity PDF instead of the webpage
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        handlePrint(e);
+      }
     };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handlePrint]);
+
+  const handleDownload = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setIsDownloading(true);
+    try {
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = downloadName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        setIsDownloading(false);
+      }, 500);
+    } catch (err) {
+      console.error(err);
+      setIsDownloading(false);
+    }
   };
 
   // Scroll Sync
@@ -245,6 +298,36 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
       <div className="fixed top-0 left-0 w-full h-1 z-[70] pointer-events-none">
         <motion.div className="h-full bg-primary/80 backdrop-blur" style={{ width: `${scrollProgress}%` }} />
       </div>
+
+      {/* PRINT & EXPORT LOADING OVERLAYS */}
+      <AnimatePresence>
+        {(isPrinting || isDownloading) && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            className="fixed inset-0 z-[110] bg-background/60 flex flex-col items-center justify-center pointer-events-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass p-8 sm:p-10 rounded-[2.5rem] flex flex-col items-center shadow-2xl border border-primary/20 max-w-sm w-[90%] text-center"
+            >
+              <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 shadow-inner relative">
+                <Loader2 size={32} className="text-primary animate-spin absolute" />
+                {isPrinting ? <Printer size={16} className="text-primary/50" /> : <Download size={16} className="text-primary/50" />}
+              </div>
+              <h2 className="text-lg sm:text-xl font-black uppercase tracking-widest text-primary mb-2">
+                {isPrinting ? "Préparation" : "Téléchargement"}
+              </h2>
+              <p className="text-xs sm:text-sm text-foreground/70 font-medium">
+                {isPrinting ? "Création de la version haute définition pour l'impression..." : "Récupération du fichier PDF original..."}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FLOATING TOP-LEFT NAV BACK */}
       <motion.div
@@ -368,7 +451,10 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
             onTouchEnd={handleTouchEnd}
             className={`flex-1 relative overflow-auto no-scrollbar scroll-smooth bg-muted/20 transition-colors duration-500 ${dragMode ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
           >
-            <div className="min-h-full py-28 px-4 sm:px-12 flex flex-col items-center pointer-events-auto">
+            {/* Elegant Background Pattern */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-20 dark:opacity-10 h-full min-h-[200vh] w-full" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, var(--foreground) 1px, transparent 0)", backgroundSize: "32px 32px" }}></div>
+
+            <div className="min-h-full py-28 px-4 sm:px-12 flex flex-col items-center pointer-events-auto relative z-10">
               <AnimatePresence mode="popLayout">
                 {Array.from(new Array(numPages), (el, index) => (
                   <motion.div
@@ -510,7 +596,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
               <div className="flex shrink-0 items-center gap-1 bg-background/40 dark:bg-background/20 rounded-full p-1 border border-border/10">
                 <button onClick={() => { setScale(1.0); }} className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Reset Zoom / Fit"><Maximize2 size={14} className="sm:w-4 sm:h-4" /></button>
                 <button onClick={handlePrint} className="hidden lg:flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Print Quality PDF"><Printer size={16} /></button>
-                <a href={pdfUrl} download={downloadName} className="hidden lg:flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Download Document"><Download size={16} /></a>
+                <button onClick={handleDownload} className="hidden lg:flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background transition active:scale-90" title="Download Document"><Download size={16} /></button>
                 <button onClick={() => setIsShareMenuOpen(!isShareMenuOpen)} className={`h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-full transition active:scale-90 ${isShareMenuOpen ? 'bg-primary text-primary-foreground shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-background'}`} title="Share Document">
                   <Share2 size={14} className="sm:w-4 sm:h-4" />
                 </button>
@@ -536,7 +622,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <button onClick={() => { handlePrint(); setIsMoreMenuOpen(false); }} className="h-12 glass border border-border/30 rounded-2xl flex items-center gap-3 px-4 active:scale-95 transition"><Printer size={16} className="text-primary" /> <span className="text-[10px] font-black uppercase tracking-widest">Print</span></button>
-                <a href={pdfUrl} download={downloadName} className="h-12 glass border border-border/30 rounded-2xl flex items-center gap-3 px-4 active:scale-95 transition"><Download size={16} className="text-primary" /> <span className="text-[10px] font-black uppercase tracking-widest">Export</span></a>
+                <button onClick={() => { handleDownload(); setIsMoreMenuOpen(false); }} className="h-12 glass border border-border/30 rounded-2xl flex items-center gap-3 px-4 active:scale-95 transition"><Download size={16} className="text-primary" /> <span className="text-[10px] font-black uppercase tracking-widest">Export</span></button>
               </div>
               <div className="glass border border-border/30 rounded-2xl p-4 flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Interaction Mode</span>
