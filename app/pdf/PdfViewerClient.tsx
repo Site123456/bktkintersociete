@@ -18,8 +18,11 @@ import {
   Printer,
   ChevronUp,
   FileText,
-  Loader2
+  Loader2,
+  Sun,
+  Moon
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Document, Page, pdfjs } from "react-pdf";
@@ -52,6 +55,12 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
   const [isPrinting, setIsPrinting] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setPdfUrl(`/api/pdf?id=${id}`);
@@ -183,6 +192,9 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
             <div className="flex items-center gap-2">
               <FileText size={10} className="text-primary" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">{docTitleLabel}</span>
+              <div className={`px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest ${docType === 'stock' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
+                {docType === 'stock' ? 'Archive' : 'Logistic'}
+              </div>
             </div>
             <span className="text-[10px] font-bold tracking-tight text-foreground/70 uppercase truncate max-w-[120px] sm:max-w-none">
               {siteName}
@@ -191,7 +203,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="bg-foreground/5 rounded-full p-1 border border-border flex items-center">
+          <div className="bg-foreground/5 rounded-full p-1 border border-border/50 flex items-center shadow-inner">
             <button
               onClick={() => setDragMode(false)}
               className={`h-7 w-7 rounded-full flex items-center justify-center transition-all ${!dragMode ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
@@ -215,6 +227,17 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
           >
             <ExternalLink size={12} /> <span className="hidden sm:inline">Native</span>
           </a>
+
+          <div className="w-[1px] h-5 bg-border/50 mx-1 hidden sm:block" />
+
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="h-9 w-9 glass rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all ring-1 ring-border shadow-sm border border-foreground/5"
+            >
+              {theme === 'dark' ? <Sun size={14} className="text-yellow-500" /> : <Moon size={14} className="text-blue-500" />}
+            </button>
+          )}
         </div>
       </motion.header>
 
@@ -229,14 +252,23 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
               file={pdfUrl}
               onLoadSuccess={onDocumentLoadSuccess}
               loading={
-                <div className="flex flex-col items-center gap-4 py-40">
+                <div className="flex flex-col items-center gap-6 py-48">
                   <div className="relative">
-                     <div className="h-12 w-12 border-2 border-primary/20 rounded-full"></div>
-                     <div className="absolute top-0 left-0 h-12 w-12 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                     <motion.div 
+                       animate={{ scale: [1, 1.1, 1], opacity: [0.3, 1, 0.3] }}
+                       transition={{ duration: 2, repeat: Infinity }}
+                       className="h-16 w-16 border-2 border-primary/20 rounded-full"
+                     ></motion.div>
+                     <motion.div 
+                       animate={{ rotate: 360 }}
+                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                       className="absolute top-0 left-0 h-16 w-16 border-2 border-primary border-t-transparent rounded-full shadow-[0_0_15px_rgba(var(--primary),0.3)]"
+                     ></motion.div>
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <p className="text-[9px] font-black tracking-[0.3em] uppercase text-primary">Loading Document</p>
-                    <p className="text-[8px] font-medium opacity-30 uppercase tracking-widest">High Fidelity Engine</p>
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-[10px] font-black tracking-[0.4em] uppercase text-primary animate-pulse">Optimizing Canvas</p>
+                    <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                    <p className="text-[8px] font-bold opacity-30 uppercase tracking-[0.2em]">Secure Document Engine v4.0</p>
                   </div>
                 </div>
               }
@@ -263,9 +295,9 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
                     style={{ transformOrigin: "top center", scale }}
                   >
                     {/* Page Shadow Glow */}
-                    <div className="absolute -inset-1 bg-foreground/[0.02] blur-xl rounded-sm -z-10 group-hover:bg-foreground/[0.05] transition-colors" />
+                    <div className="absolute -inset-2 bg-primary/5 blur-3xl rounded-full -z-10 group-hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100" />
                     
-                    <div className="shadow-[0_45px_100px_-20px_rgba(0,0,0,0.3)] dark:shadow-[0_45px_100px_-20px_rgba(0,0,0,0.95)] border border-border rounded-sm overflow-hidden bg-background/5 backdrop-blur-sm">
+                    <div className="shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] dark:shadow-[0_60px_120px_-30px_rgba(0,0,0,0.8)] border border-border/50 rounded-sm overflow-hidden bg-white/5 dark:bg-white/[0.02] backdrop-blur-[2px]">
                       <Page
                         pageNumber={index + 1}
                         width={typeof window !== "undefined" ? (window.innerWidth < 640 ? window.innerWidth - 32 : Math.min(window.innerWidth * 0.85, 900)) : 800}
@@ -338,63 +370,63 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl, siteName, doc
            layout
            initial={{ y: 20, opacity: 0 }}
            animate={{ y: 0, opacity: 1 }}
-           className="glass rounded-xl p-1.5 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.3)] pointer-events-auto ring-1 ring-border border border-foreground/5"
+           className="glass rounded-2xl p-2 flex items-center gap-2 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)] pointer-events-auto ring-1 ring-border/50 border border-foreground/10"
         >
           {/* Zoom Subgroup */}
-          <div className="flex items-center bg-foreground/5 rounded-lg p-0.5 group/zoom">
-            <button onClick={() => handleZoom(-0.1)} className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-md transition" title="Zoom Out">
+          <div className="flex items-center bg-foreground/5 rounded-xl p-1 group/zoom">
+            <button onClick={() => handleZoom(-0.1)} className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition" title="Zoom Out">
               <ZoomOut size={14} />
             </button>
-            <div className="min-w-[48px] text-center">
-              <span className="text-[9px] font-black font-mono tracking-tighter tabular-nums px-1">{Math.round(scale * 100)}%</span>
+            <div className="min-w-[54px] text-center border-x border-border/20">
+              <span className="text-[10px] font-black font-mono tracking-tighter tabular-nums px-1">{Math.round(scale * 100)}%</span>
             </div>
-            <button onClick={() => handleZoom(0.1)} className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-md transition" title="Zoom In">
+            <button onClick={() => handleZoom(0.1)} className="h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition" title="Zoom In">
               <ZoomIn size={14} />
             </button>
           </div>
 
-          <div className="px-3 flex flex-col items-center justify-center border-x border-border/50">
-            <span className="text-[9px] font-black font-mono tracking-tighter tabular-nums opacity-80">PAGE</span>
-            <span className="text-[10px] font-black font-mono leading-none">{pageNumber}<span className="opacity-30">/{numPages}</span></span>
+          <div className="px-3 flex flex-col items-center justify-center border-r border-border/50">
+            <span className="text-[8px] font-black font-mono tracking-tighter tabular-nums opacity-50 uppercase">Page</span>
+            <span className="text-[11px] font-black font-mono leading-none">{pageNumber}<span className="opacity-30">/{numPages}</span></span>
           </div>
 
-          <button onClick={resetZoom} className="h-9 px-3 flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition" title="Reset View">
-            <RotateCcw size={12} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Reset</span>
+          <button onClick={resetZoom} className="h-10 px-4 flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all hover:shadow-inner" title="Reset View">
+            <RotateCcw size={13} /> <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Reset</span>
           </button>
 
-          <div className="w-[1px] h-4 bg-border mx-0.5" />
+          <div className="w-[1px] h-6 bg-border/40 mx-1" />
 
           {/* Action Subgroup */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
             <button 
               onClick={handlePrint} 
               disabled={isPrinting}
-              className={`h-9 px-3 flex items-center gap-2 rounded-lg transition-all group ${isPrinting ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`} 
+              className={`h-10 px-4 flex items-center gap-2 rounded-xl transition-all group shadow-sm ${isPrinting ? 'bg-primary/20 text-primary animate-pulse' : 'text-primary hover:bg-primary hover:text-primary-foreground shadow-primary/10'}`} 
               title="Print"
             >
-              {isPrinting ? <Loader2 size={12} className="animate-spin" /> : <Printer size={12} className="group-hover:scale-110 transition" />}
-              <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">
-                {isPrinting ? "Wait..." : "Print"}
+              {isPrinting ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} className="group-hover:scale-110 transition" />}
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                {isPrinting ? "Printing..." : "Print"}
               </span>
             </button>
 
             <a 
               href={pdfUrl} 
               download={downloadName} 
-              className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition" 
+              className="h-10 w-10 sm:w-auto sm:px-4 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all" 
               title="Download Source"
             >
-              <Download size={12} /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Sauvegarder</span>
+              <Download size={13} /> <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Export</span>
             </a>
 
-            <div className="w-[1px] h-4 bg-border mx-0.5" />
+            <div className="w-[1px] h-6 bg-border/40 mx-1" />
 
             <button 
               onClick={() => setIsMinimized(!isMinimized)} 
-              className={`h-9 w-9 flex items-center justify-center rounded-lg transition-all ${!isMinimized ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'}`}
+              className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all ${!isMinimized ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'}`}
               title="Options / QR"
             >
-              {isMinimized ? <ScanLine size={14} /> : <ChevronUp size={14} />}
+              {isMinimized ? <ScanLine size={16} /> : <ChevronUp size={16} />}
             </button>
           </div>
 
