@@ -59,6 +59,30 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
   };
 
   const resetZoom = () => setScale(1.0);
+  
+  const handlePrint = () => {
+    // Create a hidden iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = pdfUrl;
+    document.body.appendChild(iframe);
+
+    // Wait for the iframe to load
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        // Optional: Remove the iframe after a delay
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      } catch (e) {
+        console.error("Print error:", e);
+        // Fallback to basic print if iframe fails
+        window.print();
+      }
+    };
+  };
 
   const handleCopy = () => {
     try {
@@ -262,7 +286,7 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
 
           <div className="w-[1px] h-4 bg-white/10 mx-1" />
 
-          <button onClick={() => window.print()} className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-white/40 hover:text-primary hover:bg-primary/10 rounded-[0.6rem] transition group" title="Print">
+          <button onClick={handlePrint} className="h-9 w-9 sm:w-auto sm:px-3 flex items-center justify-center gap-2 text-white/40 hover:text-primary hover:bg-primary/10 rounded-[0.6rem] transition group" title="Print">
             <Printer size={14} className="group-hover:scale-110 transition" /> <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Imprimer</span>
           </button>
 
@@ -289,26 +313,27 @@ export default function PdfViewerClient({ id, shareUrl, qrDataUrl }: Props) {
             margin: 0 !important;
             padding: 0 !important;
           }
+          .print-hidden,
           header, 
           [class*="bottom-"],
-          [class*="absolute"],
-          [class*="fixed"],
-          .flex-1 {
+          button {
             display: none !important;
           }
-          /* This resets the layout specifically for the printable Document */
-          div[class*="engine"], 
-          main {
+          /* This resets the layout specifically for the printable Document if needed */
+          div.fixed.inset-0 {
+            position: static !important;
             display: block !important;
             background: white !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
+            overflow: visible !important;
+          }
+          main {
+            display: block !important;
+            position: static !important;
+            background: white !important;
             overflow: visible !important;
             width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
-            z-index: 9999 !important;
           }
           .react-pdf__Page {
             margin: 0 !important;
