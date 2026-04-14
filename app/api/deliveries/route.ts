@@ -20,12 +20,11 @@ export async function GET(req: Request) {
       .limit(50)
       .toArray();
 
-    // On ne renvoie que les champs essentiels : site, date, et lien pdf
     const formattedDeliveries = deliveries.map((d) => ({
-      _id: d._id.toString(), // On garde l'ID pour la clé React
+      _id: d._id.toString(),
       site: d.site?.name || "BKTK International",
       date: d.date,
-      pdf: `https://bktk.indian-nepaliswad.fr/api/pdf?id=${d._id}`, // Lien direct vers le PDF
+      pdf: `https://bktk.indian-nepaliswad.fr/api/pdf?id=${d._id}`,
     }));
 
     return NextResponse.json(formattedDeliveries);
