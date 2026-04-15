@@ -8,7 +8,9 @@ async function isAdmin() {
   return cookieStore.get("admin_session")?.value === "true";
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const apiKey = req.headers.get("x-api-key");
+  if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
   if (!(await isAdmin())) return NextResponse.json({ ok: false }, { status: 401 });
   
   await connectDB();
@@ -17,6 +19,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  const apiKey = req.headers.get("x-api-key");
+  if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
   if (!(await isAdmin())) return NextResponse.json({ ok: false }, { status: 401 });
   
   try {

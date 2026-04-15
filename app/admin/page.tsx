@@ -16,7 +16,9 @@ export default function AdminPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("/api/admin/users");
+      const res = await fetch("/api/admin/users", {
+        headers: { "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" }
+      });
       if (res.ok) {
         setSession(true);
         const data = await res.json();
@@ -40,6 +42,7 @@ export default function AdminPage() {
     setLoginErr("");
     const res = await fetch("/api/admin/login", {
       method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" },
       body: JSON.stringify({ username, password })
     });
     if (res.ok) {
@@ -52,6 +55,7 @@ export default function AdminPage() {
   const toggleVerified = async (id: string, currentStatus: boolean) => {
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" },
       body: JSON.stringify({ id, verified: !currentStatus })
     });
     if (res.ok) {

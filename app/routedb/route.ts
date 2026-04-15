@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/connectDB";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
     await connectDB();
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -13,6 +15,8 @@ export async function GET() {
 }
 export async function POST(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
     await connectDB();
     const body = await req.json();
 

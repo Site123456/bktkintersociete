@@ -3,8 +3,10 @@ import connectDB from "@/lib/connectDB";
 import { CustomProduct } from "@/lib/models";
 import produitsRaw from "@/data/produits.json";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
     await connectDB();
     const custom = await CustomProduct.find({});
     
@@ -32,6 +34,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
     const { name, unit } = await req.json();
     if (!name) return NextResponse.json({ ok: false, error: "Name required" }, { status: 400 });
 

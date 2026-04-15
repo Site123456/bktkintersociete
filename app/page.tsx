@@ -140,7 +140,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
     try {
       await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" },
         body: JSON.stringify({ name, unit: "Pièce" })
       });
     } catch (e) { }
@@ -167,7 +167,11 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
       items: lines.map(l => ({ name: l.name, unit: l.unit, qty: l.qty })),
     };
 
-    const res = await fetch("/routedb/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const res = await fetch("/routedb/", { 
+      method: "POST", 
+      headers: { "Content-Type": "application/json", "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" }, 
+      body: JSON.stringify(payload) 
+    });
     if (!res.ok) { setLoading(false); alert("Error"); return; }
     const data = await res.json();
     router.push(`/pdf?id=${data.id}`);
@@ -335,7 +339,9 @@ export default function HomePage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    fetch("/api/products").then(r => r.json()).then(d => {
+    fetch("/api/products", {
+      headers: { "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" }
+    }).then(r => r.json()).then(d => {
       if (d.ok) setGlobalProduits(d.products);
     }).catch(e => console.error(e));
   }, []);
@@ -348,7 +354,7 @@ export default function HomePage() {
       try {
         const res = await fetch("/api/user/sync", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" },
           body: JSON.stringify({
             clerkId: user.id,
             email: user.primaryEmailAddress?.emailAddress,
