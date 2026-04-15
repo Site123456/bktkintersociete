@@ -11,6 +11,7 @@ export async function sendPushNotifications(tokens: string[], title: string, bod
     title,
     body,
     data,
+    _contentAvailable: true,
   }));
 
   try {
