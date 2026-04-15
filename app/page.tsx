@@ -333,6 +333,7 @@ export default function HomePage() {
 
   const [isVerified, setIsVerified] = useState(false);
   const [syncing, setSyncing] = useState(true);
+  const [userRole, setUserRole] = useState<string>("employee");
 
   const [currentMode, setCurrentMode] = useState<"commander" | "stock">("commander");
   const [globalProduits, setGlobalProduits] = useState<Produit[]>([]);
@@ -364,21 +365,46 @@ export default function HomePage() {
         if (res.ok) {
           const data = await res.json();
           setIsVerified(data.verified);
+          if (data.role) setUserRole(data.role);
+          
+          // Auto-select user's assigned site from backend
+          if (data.site) {
+            const assignedSite = FALLBACK_SITES.find(s => s.slug === data.site);
+            if (assignedSite) {
+              setSelectedSite(assignedSite);
+              localStorage.setItem(`selected-site-${user.id}`, JSON.stringify(assignedSite));
+            }
+          } else {
+            // Fallback to localStorage
+            const key = `selected-site-${user.id}`;
+            const stored = localStorage.getItem(key);
+            if (stored) { try { setSelectedSite(JSON.parse(stored)); } catch { } }
+          }
         }
       } catch (e) { console.error(e); } finally { setSyncing(false); }
     };
 
     performSync();
-
-    const key = `selected-site-${user.id}`;
-    const stored = localStorage.getItem(key);
-    if (stored) { try { setSelectedSite(JSON.parse(stored)); } catch { } }
   }, [user, isLoaded]);
 
-  const selectSite = (site: Site) => {
+  const selectSite = async (site: Site) => {
     if (!user) return;
     localStorage.setItem(`selected-site-${user.id}`, JSON.stringify(site));
     setSelectedSite(site);
+    
+    // Sync site change to backend
+    try {
+      await fetch("/api/user/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" },
+        body: JSON.stringify({
+          clerkId: user.id,
+          email: user.primaryEmailAddress?.emailAddress,
+          name: user.fullName || user.username,
+          site: site.slug
+        })
+      });
+    } catch (e) { console.error('Site sync error:', e); }
   };
 
   const AppHeader = () => (
@@ -393,7 +419,14 @@ export default function HomePage() {
           <SignedIn>
             <UserAvatar />
             <div className="flex flex-col leading-none ml-1">
-              <span className="text-xs sm:text-sm font-bold tracking-tight">BKTK</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs sm:text-sm font-bold tracking-tight">BKTK</span>
+                {userRole !== 'employee' && (
+                  <span className={`text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${
+                    userRole === 'admin' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                  }`}>{userRole}</span>
+                )}
+              </div>
               {selectedSite ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -423,6 +456,12 @@ export default function HomePage() {
             </SignInButton>
           </SignedOut>
           <SignedIn>
+            {(userRole === 'admin' || userRole === 'manager') && (
+              <Link href="/admin" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-purple-600 bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500 hover:text-white hover:border-purple-500 transition-all">
+                <ShieldAlert size={14} />
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
+            )}
             <Link href="/deliveries" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl flex items-center justify-center sm:justify-start gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 transition">
               <Archive size={15} />
               <span className="hidden sm:inline">Historique</span>
