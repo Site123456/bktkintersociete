@@ -4,6 +4,11 @@ import { User } from "@/lib/models";
 
 export async function POST(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) {
+      return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
+    }
+
     const { clerkId, email, name } = await req.json();
     if (!clerkId) return NextResponse.json({ ok: false }, { status: 400 });
 

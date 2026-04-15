@@ -4,6 +4,11 @@ import connectDB from "@/lib/connectDB";
 
 export async function GET(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     await connectDB();
     const db = mongoose.connection.db!;
 
@@ -37,6 +42,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const apiKey = req.headers.get("x-api-key");
+    if (apiKey !== process.env.API_SECRET) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     await connectDB();
     const db = mongoose.connection.db!;
     
