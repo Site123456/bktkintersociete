@@ -28,3 +28,13 @@ const AttendanceSchema = new mongoose.Schema({
 AttendanceSchema.index({ clerkId: 1, dateStr: 1 }, { unique: true });
 
 export const Attendance = mongoose.models.Attendance || mongoose.model("Attendance", AttendanceSchema);
+
+const SiteSchema = new mongoose.Schema({
+  slug: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  line1: { type: String, default: "" },
+  line2: { type: String, default: "" },
+  active: { type: Boolean, default: true }
+}, { timestamps: true });
+
+export const Site = mongoose.models.Site || mongoose.model("Site", SiteSchema);

@@ -328,7 +328,7 @@ export function CreerDevis({ selectedSite, produits }: { selectedSite: any, prod
 
 export default function HomePage() {
   const { user, isLoaded } = useUser();
-  const [sites] = useState<Site[]>(FALLBACK_SITES);
+  const [sites, setSites] = useState<Site[]>(FALLBACK_SITES);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   const [isVerified, setIsVerified] = useState(false);
@@ -338,6 +338,15 @@ export default function HomePage() {
   const [currentMode, setCurrentMode] = useState<"commander" | "stock">("commander");
   const [globalProduits, setGlobalProduits] = useState<Produit[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Fetch sites from backend
+  useEffect(() => {
+    fetch("/api/sites", {
+      headers: { "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" }
+    }).then(r => r.json()).then(d => {
+      if (d.ok && d.sites?.length) setSites(d.sites);
+    }).catch(e => console.error(e));
+  }, []);
 
   useEffect(() => {
     fetch("/api/products", {

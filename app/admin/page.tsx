@@ -1,20 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { MapPin, Search, ShieldAlert, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ToggleLeft, ToggleRight, Search, ShieldAlert, MapPin, ChevronDown, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const SITES = [
-  { slug: "", name: "Aucun site" },
-  { slug: "BKTK01", name: "INS Paris 15" },
-  { slug: "BKTK02", name: "INS Bordeaux" },
-  { slug: "BKTK03", name: "INS Courbevoie" },
-  { slug: "BKTK04", name: "INS Saint-Ouen" },
-  { slug: "BKTK05", name: "INS Bagneux" },
-  { slug: "BKTK06", name: "INS Ivry" },
-  { slug: "BKTK07", name: "INS Aubervilliers" },
-  { slug: "BKTK08", name: "Koseli Buffet" },
-];
+type SiteItem = { slug: string; name: string; };
 
 const ROLES = [
   { value: "employee", label: "Employé", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400" },
@@ -29,10 +19,20 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSite, setFilterSite] = useState("");
-  
+  const [sites, setSites] = useState<SiteItem[]>([]);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginErr, setLoginErr] = useState("");
+
+  // Fetch sites from API
+  useEffect(() => {
+    fetch("/api/sites", {
+      headers: { "x-api-key": process.env.NEXT_PUBLIC_API_SECRET || "" }
+    }).then(r => r.json()).then(d => {
+      if (d.ok && d.sites) setSites(d.sites);
+    }).catch(() => { });
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -106,14 +106,14 @@ export default function AdminPage() {
   };
 
   const filteredUsers = users.filter(u => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       (u.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.email || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSite = !filterSite || u.site === filterSite;
     return matchesSearch && matchesSite;
   });
 
-  const siteCounts = SITES.slice(1).map(s => ({
+  const siteCounts = sites.slice(1).map(s => ({
     ...s,
     count: users.filter(u => u.site === s.slug).length
   }));
@@ -127,7 +127,7 @@ export default function AdminPage() {
 
         <form onSubmit={handleLogin} className="w-full max-w-sm p-8 space-y-6 glass border-border/50 rounded-[2rem] shadow-2xl relative z-10 overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
-          
+
           <div className="flex flex-col items-center gap-3">
             <div className="h-16 w-16 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-lg shadow-primary/10">
               <ShieldAlert className="h-8 w-8" />
@@ -137,22 +137,22 @@ export default function AdminPage() {
               Connectez-vous pour gérer les accès et les utilisateurs.
             </p>
           </div>
-          
+
           <div className="space-y-4 pt-2">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Identifiant</label>
-              <input 
+              <input
                 value={username} onChange={e => setUsername(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-xl border bg-background/50 focus:bg-background text-sm focus:ring-2 focus:ring-primary/50 outline-none transition shadow-sm font-medium placeholder:text-muted-foreground/50" 
-                placeholder="Ex: admin" 
+                className="w-full px-4 py-3.5 rounded-xl border bg-background/50 focus:bg-background text-sm focus:ring-2 focus:ring-primary/50 outline-none transition shadow-sm font-medium placeholder:text-muted-foreground/50"
+                placeholder="Ex: admin"
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Mot de passe</label>
-              <input 
+              <input
                 type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-xl border bg-background/50 focus:bg-background text-sm focus:ring-2 focus:ring-primary/50 outline-none transition shadow-sm font-medium placeholder:text-muted-foreground/50" 
-                placeholder="••••••••" 
+                className="w-full px-4 py-3.5 rounded-xl border bg-background/50 focus:bg-background text-sm focus:ring-2 focus:ring-primary/50 outline-none transition shadow-sm font-medium placeholder:text-muted-foreground/50"
+                placeholder="••••••••"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -207,12 +207,12 @@ export default function AdminPage() {
           <div className="p-4 border-b bg-muted/20 flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un utilisateur..." 
-                className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border bg-background focus:ring-2 focus:ring-primary/40 outline-none" 
+                placeholder="Rechercher un utilisateur..."
+                className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border bg-background focus:ring-2 focus:ring-primary/40 outline-none"
               />
             </div>
             <div className="relative">
@@ -223,7 +223,7 @@ export default function AdminPage() {
                 className="pl-9 pr-8 py-2.5 text-sm rounded-xl border bg-background focus:ring-2 focus:ring-primary/40 outline-none appearance-none"
               >
                 <option value="">Tous les sites</option>
-                {SITES.slice(1).map(s => <option key={s.slug} value={s.slug}>{s.name}</option>)}
+                {sites.slice(1).map(s => <option key={s.slug} value={s.slug}>{s.name}</option>)}
               </select>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function AdminPage() {
                     <span className="text-xs text-muted-foreground truncate">{u.email}</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Role selector */}
                   <select
@@ -258,7 +258,7 @@ export default function AdminPage() {
                     onChange={e => updateUserSite(u._id, e.target.value)}
                     className="text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-0 outline-none cursor-pointer"
                   >
-                    {SITES.map(s => <option key={s.slug} value={s.slug}>{s.name}</option>)}
+                    {sites.map(s => <option key={s.slug} value={s.slug}>{s.name}</option>)}
                   </select>
 
                   {/* Verified */}
