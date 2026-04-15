@@ -24,9 +24,15 @@ export async function PATCH(req: Request) {
   if (!(await isAdmin())) return NextResponse.json({ ok: false }, { status: 401 });
   
   try {
-    const { id, verified } = await req.json();
+    const { id, verified, site, role } = await req.json();
     await connectDB();
-    await User.findByIdAndUpdate(id, { verified });
+    
+    const updateData: any = {};
+    if (verified !== undefined) updateData.verified = verified;
+    if (site !== undefined) updateData.site = site;
+    if (role !== undefined) updateData.role = role;
+    
+    await User.findByIdAndUpdate(id, updateData);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ ok: false }, { status: 500 });
