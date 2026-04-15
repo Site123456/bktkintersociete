@@ -34,3 +34,39 @@ export async function GET(req: Request) {
     return new NextResponse("Erreur Serveur", { status: 500 });
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    await connectDB();
+    const db = mongoose.connection.db!;
+    
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new NextResponse("Invalid JSON", { status: 400 });
+    }
+
+    const { site, date, user, type, items } = body;
+    
+    if (!site || !items || !Array.isArray(items)) {
+      return new NextResponse("Missing data", { status: 400 });
+    }
+
+    const payload = {
+      site: site,
+      date: new Date(date || Date.now()),
+      user: user || "Unknown",
+      type: type || "command",
+      items: items,
+      createdAt: new Date(),
+    };
+
+    const result = await db.collection("deliveries").insertOne(payload);
+
+    return NextResponse.json({ ok: true, id: result.insertedId });
+  } catch (error) {
+    console.error("Erreur POST Deliveries:", error);
+    return new NextResponse("Erreur Serveur", { status: 500 });
+  }
+}
