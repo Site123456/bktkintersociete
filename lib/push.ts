@@ -1,18 +1,25 @@
-export async function sendPushNotifications(tokens: string[], title: string, body: string, data?: any) {
+export async function sendPushNotifications(tokens: string[], title: string, body: string, data?: any, silent?: boolean) {
   if (tokens.length === 0) return;
 
   // Filter out empty or invalid tokens
   const validTokens = tokens.filter(t => t && t.startsWith('ExpoPushToken['));
   if (validTokens.length === 0) return;
 
-  const messages = validTokens.map(token => ({
-    to: token,
-    sound: 'default',
-    title,
-    body,
-    data,
-    _contentAvailable: true,
-  }));
+  const messages = validTokens.map(token => {
+    const message: any = {
+      to: token,
+      sound: 'default',
+      data,
+      _contentAvailable: true,
+    };
+
+    if (!silent) {
+      message.title = title;
+      message.body = body;
+    }
+
+    return message;
+  });
 
   try {
     const response = await fetch('https://exp.host/--/api/v2/push/send', {
