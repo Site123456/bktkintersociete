@@ -113,7 +113,7 @@ export default function AdminPage() {
     return matchesSearch && matchesSite;
   });
 
-  const siteCounts = sites.slice(1).map(s => ({
+  const siteCounts = sites.map(s => ({
     ...s,
     count: users.filter(u => u.site === s.slug).length
   }));
