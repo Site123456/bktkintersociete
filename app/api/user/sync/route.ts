@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { clerkId, email, name, site } = body;
+    const { clerkId, email, name, site, pushToken } = body;
     
     if (!clerkId) {
       return NextResponse.json({ ok: false, message: "clerkId is required" }, { status: 400 });
@@ -56,6 +56,7 @@ export async function POST(req: Request) {
     if (name) update.name = name.trim();
     if (email) update.email = email.trim().toLowerCase();
     if (site !== undefined && site !== null) update.site = site;
+    if (pushToken !== undefined && pushToken !== null) update.pushToken = pushToken;
 
     const user = await User.findOneAndUpdate(
       { clerkId },

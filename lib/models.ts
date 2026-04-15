@@ -6,7 +6,8 @@ const UserSchema = new mongoose.Schema({
   name: { type: String },
   verified: { type: Boolean, default: false },
   site: { type: String, default: "" },
-  role: { type: String, enum: ["employee", "manager", "admin"], default: "employee" }
+  role: { type: String, enum: ["employee", "manager", "admin"], default: "employee" },
+  pushToken: { type: String, default: "" }
 }, { timestamps: true });
 
 export const User = mongoose.models.User || mongoose.model("User", UserSchema);

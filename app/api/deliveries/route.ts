@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/connectDB";
+import { User } from "@/lib/models";
+import { sendPushNotifications } from "@/lib/push";
 
 export async function GET(req: Request) {
   try {
@@ -73,6 +75,28 @@ export async function POST(req: Request) {
     };
 
     const result = await db.collection("deliveries").insertOne(payload);
+
+    // Broadcast Notifications to all users on this site
+    try {
+      const siteSlug = site?.slug;
+      if (siteSlug) {
+        const usersOnSite = await User.find({ 
+          site: siteSlug, 
+          pushToken: { $exists: true, $ne: "" } 
+        }).select('pushToken');
+        
+        const tokens = usersOnSite.map(u => u.pushToken);
+        if (tokens.length > 0) {
+          const title = type === 'stock' ? '📦 Inventaire Mis à Jour' : '🚚 Nouvelle Commande';
+          const senderName = user || "Un utilisateur";
+          const bodyMsg = `Une nouvelle commande pour ${site?.name || 'votre site'} a été envoyée par ${senderName}. Les confirmations de commande sont envoyées à tous les utilisateurs du site.`;
+          
+          await sendPushNotifications(tokens, title, bodyMsg, { type, siteSlug });
+        }
+      }
+    } catch (notifErr) {
+      console.error("Failed to broadcast notifications:", notifErr);
+    }
 
     return NextResponse.json({ ok: true, id: result.insertedId });
   } catch (error) {
