@@ -2,6 +2,39 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/connectDB";
 import { User } from "@/lib/models";
 
+export async function GET(req: Request) {
+  try {
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey || apiKey !== process.env.API_SECRET) {
+      return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const clerkId = searchParams.get("clerkId");
+    
+    if (!clerkId) {
+      return NextResponse.json({ ok: false, message: "clerkId is required" }, { status: 400 });
+    }
+
+    await connectDB();
+    const user = await User.findOne({ clerkId });
+    
+    if (!user) {
+      return NextResponse.json({ ok: false, message: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      ok: true, 
+      name: user.name,
+      site: user.site || "",
+      verified: user.verified,
+      role: user.role || "employee"
+    });
+  } catch (err) {
+    return NextResponse.json({ ok: false, error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const apiKey = req.headers.get("x-api-key");
