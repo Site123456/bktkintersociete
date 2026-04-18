@@ -39,3 +39,12 @@ const SiteSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export const Site = mongoose.models.Site || mongoose.model("Site", SiteSchema);
+
+const MessageSchema = new mongoose.Schema({
+  clerkId: { type: String, required: true },
+  name: { type: String, required: true },
+  content: { type: String, required: true },
+  site: { type: String, default: 'global' }, // Can be used to filter chat per site
+}, { timestamps: true });
+
+export const Message = mongoose.models.Message || mongoose.model("Message", MessageSchema);

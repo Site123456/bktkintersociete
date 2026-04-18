@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
 import connectDB from "@/lib/connectDB";
 import { User } from "@/lib/models";
 
-async function isAdmin() {
-  const cookieStore = await cookies();
-  return cookieStore.get("admin_session")?.value === "true";
+async function isClerkAdmin() {
+  const { userId } = await auth();
+  if (!userId) return false;
+  
+  await connectDB();
+  const dbUser = await User.findOne({ clerkId: userId });
+  return dbUser && dbUser.role === "admin";
 }
 
 export async function GET(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
-  if (!(await isAdmin())) return NextResponse.json({ ok: false }, { status: 401 });
+  if (!(await isClerkAdmin())) return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 401 });
   
   await connectDB();
   const users = await User.find({}).sort({ createdAt: -1 });
@@ -19,9 +21,7 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== process.env.API_SECRET) return NextResponse.json({ ok: false }, { status: 401 });
-  if (!(await isAdmin())) return NextResponse.json({ ok: false }, { status: 401 });
+  if (!(await isClerkAdmin())) return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 401 });
   
   try {
     const { id, verified, site, role } = await req.json();
