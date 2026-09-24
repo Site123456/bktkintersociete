@@ -1,0 +1,173 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * BKTK design tokens.
+ * Brand: red #D22630 (the one main action per screen), navy #0F1D4A (brand surfaces),
+ * sky #1A9BE0 / #0A6FAE (links, focus, information). Neutrals are tinted with the navy.
+ * Text colours reach at least 4.5:1 contrast on their backgrounds in both themes.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #f7f8fb;
+  --foreground: #111a36;
+  --card: #ffffff;
+  --card-foreground: #111a36;
+  --popover: #ffffff;
+  --popover-foreground: #111a36;
+  --primary: #d22630;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f6;
+  --secondary-foreground: #1a2547;
+  --muted: #f0f2f7;
+  --muted-foreground: #5e6782;
+  --accent: #eaf6fd;
+  --accent-foreground: #0a4f7c;
+  --destructive: #b42318;
+  --border: #e4e8f0;
+  --input: #cfd5e2;
+  --ring: #0a6fae;
+  --brand: #0f1d4a;
+  --brand-foreground: #ffffff;
+  --info: #0a6fae;
+  --success: #1e7f4f;
+  --warning: #9a6200;
+}
+
+.dark {
+  --background: #0a1024;
+  --foreground: #e9edf7;
+  --card: #111933;
+  --card-foreground: #e9edf7;
+  --popover: #18223f;
+  --popover-foreground: #e9edf7;
+  --primary: #d22630;
+  --primary-foreground: #ffffff;
+  --secondary: #1d2848;
+  --secondary-foreground: #e9edf7;
+  --muted: #18223f;
+  --muted-foreground: #8c96b2;
+  --accent: #13294a;
+  --accent-foreground: #b9e3fa;
+  --destructive: #dc2626;
+  --border: #26314f;
+  --input: #3a4668;
+  --ring: #6cc3f0;
+  --brand: #16224d;
+  --brand-foreground: #ffffff;
+  --info: #6cc3f0;
+  --success: #4ade80;
+  --warning: #fbbf24;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* Prices, quantities and document numbers line up */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utilities */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}
+
+/* Paper is white: printing always uses the light palette, even when the screen is in dark mode. */
+@media print {
+  .dark {
+    --background: #ffffff;
+    --foreground: #111a36;
+    --card: #ffffff;
+    --card-foreground: #111a36;
+    --popover: #ffffff;
+    --popover-foreground: #111a36;
+    --secondary: #eef1f6;
+    --secondary-foreground: #1a2547;
+    --muted: #f0f2f7;
+    --muted-foreground: #5e6782;
+    --accent: #eaf6fd;
+    --accent-foreground: #0a4f7c;
+    --destructive: #b42318;
+    --border: #e4e8f0;
+    --input: #cfd5e2;
+    --brand: #0f1d4a;
+    --info: #0a6fae;
+    --success: #1e7f4f;
+    --warning: #9a6200;
+    color-scheme: light;
+  }
+}
