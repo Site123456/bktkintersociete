@@ -48,5 +48,6 @@ push.bat
 setup.bat
 *.local.bat
 
-# pdf.js worker copied locally by older setups (not used any more)
-public/pdf.worker.min.mjs
+# pdf.js worker, copied from node_modules by scripts/copy-pdf-worker.mjs (npm postinstall)
+/public/pdf.worker.min.mjs
+/public/pdfjs-fonts/

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,39 +14,78 @@ import { COMMON_UNITS, MAX_NAME_LENGTH, MAX_QTY, MAX_UNIT_LENGTH } from "./units
 export type LineRowLine = { name: string; unit: string; qty: number };
 
 export type LineRowProps = {
-  /** 0-based position in the list (shown as index + 1). */
-  index: number;
   line: LineRowLine;
   onQty: (n: number) => void;
   onRemove: () => void;
-  /** When given, an edit button lets the user change the packaging. */
+  /** When given, tapping the name opens a small form to change the packaging. */
   onUnitChange?: (unit: string) => void;
-  /** When given (and readOnlyName is not set), the same edit button also lets the user rename the line. */
+  /** When given (and readOnlyName is not set), the same form also lets the user rename the line. */
   onNameChange?: (name: string) => void;
   readOnlyName?: boolean;
+  /**
+   * Quantity at which the minus button becomes a trash button: 1 on an order (default),
+   * 0 on an inventory where 0 means "out of stock" and is kept.
+   */
+  removeAt?: number;
+  /** Short note shown next to the packaging when the quantity is 0 (e.g. "en rupture"). */
+  zeroLabel?: string;
   max?: number;
   className?: string;
+  /** Extra classes for the quantity field (scroll margins under sticky bars). */
+  inputClassName?: string;
 };
 
-/** Small popover to rename a line and/or change its packaging. */
+function NameBlock({ line, unit, zeroLabel }: { line: LineRowLine; unit: string; zeroLabel?: string }) {
+  const empty = !(line.qty > 0);
+  return (
+    <>
+      <span className={cn("line-clamp-2 text-sm leading-5 font-medium break-words", empty && "text-muted-foreground")}>
+        {line.name}
+      </span>
+      {unit || (empty && zeroLabel) ? (
+        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs leading-4 text-muted-foreground">
+          {unit ? <span className="truncate">{unit}</span> : null}
+          {empty && zeroLabel ? (
+            <span className="shrink-0 font-medium text-warning">
+              {unit ? <span aria-hidden>· </span> : null}
+              {zeroLabel}
+            </span>
+          ) : null}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+/** Name + packaging; a button opening the edit form (rename, packaging, remove) when the line can be edited. */
 function EditLine({
   line,
+  unitText,
   canName,
+  zeroLabel,
   onNameChange,
   onUnitChange,
+  onRemove,
 }: {
   line: LineRowLine;
+  unitText: string;
   canName: boolean;
+  zeroLabel?: string;
   onNameChange?: (name: string) => void;
   onUnitChange?: (unit: string) => void;
+  onRemove: () => void;
 }) {
   const id = useId();
+  const contentRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  // "Retirer": the row (and this button) disappears, the list moves focus to the next line itself.
+  const removing = useRef(false);
   const [name, setName] = useState(line.name);
   const [unit, setUnit] = useState(line.unit);
 
   const onOpenChange = (next: boolean) => {
     if (next) {
+      removing.current = false;
       setName(line.name);
       setUnit(line.unit);
     }
@@ -69,18 +108,39 @@ function EditLine({
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0 text-muted-foreground sm:size-9"
-          aria-label={`Modifier ${line.name}`}
-          title="Modifier"
+          title={`Modifier ${line.name}`}
+          className="group -mx-1.5 flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-md px-1.5 py-1 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
-          <Pencil className="size-4" aria-hidden />
-        </Button>
+          <span className="sr-only">Modifier : </span>
+          <span className="flex min-w-0 items-start gap-1.5">
+            <span className="flex min-w-0 flex-col">
+              <NameBlock line={line} unit={unitText} zeroLabel={zeroLabel} />
+            </span>
+            <Pencil
+              className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+              aria-hidden
+            />
+          </span>
+        </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 max-w-[calc(100vw-1rem)] space-y-4 rounded-xl">
+      <PopoverContent
+        ref={contentRef}
+        align="start"
+        tabIndex={-1}
+        onCloseAutoFocus={(e) => {
+          if (removing.current) e.preventDefault();
+        }}
+        onOpenAutoFocus={(e) => {
+          // On touch screens do not pop the keyboard up at once: the packaging or "Retirer" may be what is wanted.
+          if (window.matchMedia("(pointer: coarse)").matches) {
+            e.preventDefault();
+            contentRef.current?.focus({ preventScroll: true });
+          }
+        }}
+        className="w-80 max-w-[calc(100vw-2rem)] space-y-4 rounded-xl"
+      >
         {canName ? (
           <div className="grid gap-1.5">
             <Label htmlFor={`${id}-name`}>Désignation</Label>
@@ -93,7 +153,9 @@ function EditLine({
               className="h-11 sm:h-9"
             />
           </div>
-        ) : null}
+        ) : (
+          <p className="text-sm font-semibold break-words">{line.name}</p>
+        )}
         {onUnitChange ? (
           <div className="grid gap-1.5">
             <Label htmlFor={`${id}-unit`}>Conditionnement</Label>
@@ -124,13 +186,28 @@ function EditLine({
             </div>
           </div>
         ) : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" className="h-11 sm:h-9" onClick={() => setOpen(false)}>
-            Annuler
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="-ml-2 h-11 px-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:h-9"
+            onClick={() => {
+              removing.current = true;
+              setOpen(false);
+              onRemove();
+            }}
+          >
+            <Trash2 aria-hidden />
+            Retirer
           </Button>
-          <Button type="button" className="h-11 sm:h-9" onClick={save} disabled={canName && !name.trim()}>
-            Enregistrer
-          </Button>
+          <div className="ml-auto flex gap-2">
+            <Button type="button" variant="ghost" className="h-11 sm:h-9" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="button" className="h-11 sm:h-9" onClick={save} disabled={canName && !name.trim()}>
+              Enregistrer
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
@@ -138,65 +215,56 @@ function EditLine({
 }
 
 /**
- * One order line: number, name, packaging, quantity stepper and remove button.
- * Renders an <li>: place it inside an <ol>/<ul> (e.g. <ol className="divide-y">).
+ * One line of the list: name and packaging on the left (tap to edit), compact quantity stepper on the right.
+ * At the lowest quantity the minus becomes a trash button. Renders an <li>: place it in an <ol>/<ul>.
  */
 export function LineRow({
-  index,
   line,
   onQty,
   onRemove,
   onUnitChange,
   onNameChange,
   readOnlyName = false,
+  removeAt = 1,
+  zeroLabel,
   max = MAX_QTY,
   className,
+  inputClassName,
 }: LineRowProps) {
-  const empty = !(line.qty > 0);
   const unitText = formatUnit(line.unit);
   const canName = Boolean(onNameChange) && !readOnlyName;
   const editable = canName || Boolean(onUnitChange);
 
   return (
     <li
-      data-empty={empty || undefined}
-      className={cn("flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4", className)}
+      data-empty={!(line.qty > 0) || undefined}
+      className={cn("flex items-center gap-3 py-2 pr-2 pl-4 transition-colors", className)}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-3">
-        <span className="tabular w-6 shrink-0 text-right text-xs leading-5 text-muted-foreground">{index + 1}</span>
-        <div className="min-w-0 flex-1">
-          <p className={cn("text-sm leading-5 font-medium break-words", empty && "text-muted-foreground")}>{line.name}</p>
-          {unitText ? <p className="text-xs text-muted-foreground">{unitText}</p> : null}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 pl-9 sm:pl-0">
-        <QuantityStepper
-          value={line.qty}
-          onChange={onQty}
-          max={max}
-          label={`Quantité ${line.name}`}
-          className="flex-1 sm:flex-none"
+      {editable ? (
+        <EditLine
+          line={line}
+          unitText={unitText}
+          canName={canName}
+          zeroLabel={zeroLabel}
+          onNameChange={onNameChange}
+          onUnitChange={onUnitChange}
+          onRemove={onRemove}
         />
-        {editable ? (
-          <EditLine
-            line={line}
-            canName={canName}
-            onNameChange={onNameChange}
-            onUnitChange={onUnitChange}
-          />
-        ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:size-9"
-          onClick={onRemove}
-          aria-label={`Retirer ${line.name}`}
-          title="Retirer"
-        >
-          <Trash2 className="size-4" aria-hidden />
-        </Button>
-      </div>
+      ) : (
+        <div className="flex min-h-11 min-w-0 flex-1 flex-col justify-center py-1">
+          <NameBlock line={line} unit={unitText} zeroLabel={zeroLabel} />
+        </div>
+      )}
+      <QuantityStepper
+        value={line.qty}
+        onChange={onQty}
+        max={max}
+        label={`Quantité ${line.name}`}
+        onRemove={onRemove}
+        removeAt={removeAt}
+        removeLabel={`Retirer ${line.name}`}
+        inputClassName={inputClassName}
+      />
     </li>
   );
 }

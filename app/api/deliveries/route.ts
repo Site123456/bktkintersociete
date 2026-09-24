@@ -136,7 +136,7 @@ export async function POST(req: Request) {
     const ymd = typeof date === "string" || typeof date === "number" ? toYmd(date) : "";
     const author = g.user ? displayName(g.user) : authorFrom(user);
 
-    const id = await insertDocument(
+    const { id } = await insertDocument(
       encodeDocument({
         kind,
         site: slug,

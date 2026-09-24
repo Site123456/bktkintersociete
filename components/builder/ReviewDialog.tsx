@@ -5,19 +5,12 @@ import Link from "next/link";
 import { CheckCircle2, FileText, Info, MapPin, Send } from "lucide-react";
 import { KindBadge } from "@/components/app/KindBadge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Spinner } from "@/components/ui/spinner";
-import { formatDateLong, formatQty, formatUnit } from "@/lib/format";
+import { formatDateFr, formatQty, formatUnit } from "@/lib/format";
 import type { DeliveryLine, DocKind, SiteOption } from "@/types/delivery";
-import { countLabel, plural } from "./lines";
+import { capitalize, countLabel, plural, weekdayOf } from "./lines";
 import { useMediaQuery } from "./use-media-query";
 
 /** Snapshot of what will be sent (taken when the review opens). */
@@ -75,9 +68,14 @@ function ReviewBody({ data }: { data: ReviewData }) {
         </div>
         <div className="rounded-lg border p-3">
           <Caption>{data.kind === "bl" ? "Livraison demandée" : "Inventaire de"}</Caption>
-          <p className="mt-1 text-sm font-semibold first-letter:uppercase">
-            {data.kind === "bl" ? formatDateLong(data.requestedDate) : data.monthLabel}
-          </p>
+          {data.kind === "bl" && data.requestedDate ? (
+            <p className="mt-1 text-sm">
+              <span className="tabular font-semibold">{formatDateFr(data.requestedDate)}</span>
+              <span className="text-muted-foreground"> · {weekdayOf(data.requestedDate)}</span>
+            </p>
+          ) : (
+            <p className="mt-1 text-sm font-semibold">{capitalize(data.monthLabel ?? "")}</p>
+          )}
           {data.author ? <p className="mt-0.5 text-xs text-muted-foreground">Émis par {data.author}</p> : null}
         </div>
       </div>
@@ -216,11 +214,7 @@ export function ReviewDialog({ open, data, phase, sent, onClose, onConfirm }: Re
           <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">{body}</div>
-        {buttons ? (
-          <DrawerFooter className="flex-col-reverse border-t pt-3 pb-safe">
-            {buttons}
-          </DrawerFooter>
-        ) : null}
+        {buttons ? <DrawerFooter className="flex-col-reverse border-t pt-3 pb-safe">{buttons}</DrawerFooter> : null}
       </DrawerContent>
     </Drawer>
   );

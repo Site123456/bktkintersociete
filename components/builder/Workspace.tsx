@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ClipboardList, Truck } from "lucide-react";
 import { AppHeader, type AppRole } from "@/components/app/AppHeader";
@@ -9,7 +10,7 @@ import { SiteGrid } from "@/components/app/SiteSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMounted } from "@/hooks/use-local-draft";
-import { normalizeKey } from "@/lib/format";
+import { normalizeKey, ymdParis } from "@/lib/format";
 import type { DeliveryLine, DocKind, Product, SiteOption } from "@/types/delivery";
 import { saveSite, toastError } from "./api";
 import { DeliveryBuilder, type Recommend } from "./DeliveryBuilder";
@@ -38,19 +39,28 @@ function syncUrl(kind: DocKind, fromId: string | null) {
   window.history.replaceState(null, "", qs ? `/?${qs}` : "/");
 }
 
-/** Placeholder while the saved draft is read from the browser. */
+/** Placeholder while the saved draft is read from the browser (same shapes as the builder). */
 function BuilderSkeleton() {
   return (
-    <div className="grid gap-6 pb-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]" aria-busy="true">
+    <div
+      className="grid gap-6 pb-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]"
+      aria-busy="true"
+    >
       <p className="sr-only" role="status">
         Chargement…
       </p>
-      <div className="space-y-5">
-        <Skeleton className="h-28 w-full rounded-xl" />
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <Skeleton className="h-11 w-40 rounded-md" />
+        </div>
         <Skeleton className="h-12 w-full rounded-xl" />
-        <Skeleton className="h-48 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
       </div>
-      <Skeleton className="hidden h-72 rounded-xl lg:block" />
+      <Skeleton className="hidden h-80 rounded-xl lg:block" />
     </div>
   );
 }
@@ -68,6 +78,7 @@ export function Workspace({
 }: WorkspaceProps) {
   // Drafts live in the browser: the builders render after hydration only.
   const mounted = useMounted();
+  const router = useRouter();
   const [siteSlug, setSiteSlug] = useState<string | null>(user.site);
   const [kind, setKind] = useState<DocKind>(initialKind);
   const [catalog, setCatalog] = useState<Product[]>(products);
@@ -76,6 +87,51 @@ export function Workspace({
       ? { id: initialFromId, number: initialFromNumber, lines: initialLines }
       : null,
   );
+
+  // The address drives the tab: a navigation that keeps this screen mounted (e.g. "Nouveau" → "/") resets it.
+  // syncUrl() below always writes an address matching the state, so it never undoes a choice made here.
+  const params = useSearchParams();
+  const urlKind: DocKind = params.get("kind") === "stock" ? "stock" : "bl";
+  const urlFrom = params.get("from");
+  const [seenUrl, setSeenUrl] = useState({ kind: urlKind, from: urlFrom });
+  if (seenUrl.kind !== urlKind || seenUrl.from !== urlFrom) {
+    setSeenUrl({ kind: urlKind, from: urlFrom });
+    setKind(urlKind);
+    // A bon de livraison address without this copy: "Recommander" is over.
+    if (recommend && urlKind === "bl" && urlFrom !== recommend.id) setRecommend(null);
+  }
+
+  // Dates come from the server: after midnight (page left open), fetch fresh ones before they are used.
+  const [datesPending, startDatesRefresh] = useTransition();
+  const refreshedFor = useRef<string | null>(null);
+  const today = dates.today;
+  /** true when the day changed since the page was rendered: fresh dates are on their way (wait for them). */
+  const checkDates = useCallback((): boolean => {
+    if (datesPending) return true;
+    const now = ymdParis(0);
+    // Offline, a refresh would fall back to reloading the page: keep these dates until the connection is back.
+    if (now === today || navigator.onLine === false) return false;
+    // Already refreshed for this change and the server kept its date: trust it (the device clock is off).
+    const change = `${today}>${now}`;
+    if (refreshedFor.current === change) return false;
+    refreshedFor.current = change;
+    startDatesRefresh(() => router.refresh());
+    return true;
+  }, [datesPending, today, router]);
+
+  useEffect(() => {
+    const onShow = () => {
+      if (document.visibilityState === "visible") checkDates();
+    };
+    document.addEventListener("visibilitychange", onShow);
+    window.addEventListener("focus", onShow);
+    window.addEventListener("online", onShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onShow);
+      window.removeEventListener("focus", onShow);
+      window.removeEventListener("online", onShow);
+    };
+  }, [checkDates]);
 
   const site = sites.find((s) => s.slug === siteSlug) ?? null;
 
@@ -120,7 +176,7 @@ export function Workspace({
         onSiteChange={site ? chooseSite : undefined}
       />
 
-      <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-5 sm:px-6 sm:pt-8">
+      <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-4 sm:px-6 sm:pt-8">
         {!site ? (
           <div className="space-y-6 pb-10">
             <PageHeader
@@ -130,7 +186,7 @@ export function Workspace({
             <SiteGrid sites={sites} value={siteSlug} onSelect={chooseSite} />
           </div>
         ) : (
-          <Tabs value={kind} onValueChange={changeKind} className="flex flex-1 flex-col gap-5">
+          <Tabs value={kind} onValueChange={changeKind} className="flex flex-1 flex-col gap-5 sm:gap-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <PageHeader
                 title={kind === "bl" ? "Nouveau bon de livraison" : "Inventaire du mois"}
@@ -146,7 +202,7 @@ export function Workspace({
                   )
                 }
               />
-              <TabsList aria-label="Type de document" className="h-12 w-full shrink-0 sm:h-10 sm:w-auto">
+              <TabsList aria-label="Type de document" className="h-11 w-full shrink-0 sm:h-10 sm:w-auto">
                 <TabsTrigger value="bl" className="px-4">
                   <Truck aria-hidden />
                   Bon de livraison
@@ -166,6 +222,8 @@ export function Workspace({
                   products={catalog}
                   author={user.name}
                   dates={dates}
+                  datesPending={datesPending}
+                  checkDates={checkDates}
                   recommend={recommend}
                   onRecommendDone={recommendDone}
                   onProductCreated={addProduct}
@@ -182,6 +240,8 @@ export function Workspace({
                   products={catalog}
                   author={user.name}
                   dates={dates}
+                  datesPending={datesPending}
+                  checkDates={checkDates}
                   onProductCreated={addProduct}
                 />
               ) : (

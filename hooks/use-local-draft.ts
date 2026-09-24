@@ -44,15 +44,17 @@ function removeDraft(key: string) {
 /**
  * State saved in localStorage (debounced, 400 ms), restored on the next visit.
  * `key` null disables saving. Changing the key loads the draft stored under the new key.
+ * A change made in another tab (same key) replaces the value here, or resets it when that tab removed the draft.
  * Reads storage during the first render: render the component client-only (see useMounted) to avoid hydration mismatches.
  * Optional `validate` checks the stored value's shape; without it only the JSON type must match `initial`.
- * Returns [value, setValue, clear] — clear() forgets the stored draft and goes back to `initial`.
+ * Returns [value, setValue, clear, reload] — clear() forgets the stored draft and goes back to `initial`;
+ * reload() saves any pending change, then reads the stored draft again (with the current `initial` and `validate`).
  */
 export function useLocalDraft<T>(
   key: string | null,
   initial: T,
   validate?: (v: unknown) => v is T,
-): [T, SetDraft<T>, () => void] {
+): [T, SetDraft<T>, () => void, () => void] {
   const [state, setState] = useState<DraftState<T>>(() => ({ key, value: readDraft(key, initial, validate), dirty: false }));
 
   // Key changed (e.g. another site): load that draft now, during render (React's "adjust state on prop change").
@@ -64,8 +66,10 @@ export function useLocalDraft<T>(
 
   const pending = useRef<{ key: string; value: T } | null>(null);
   const initialRef = useRef(initial);
+  const validateRef = useRef(validate);
   useEffect(() => {
     initialRef.current = initial;
+    validateRef.current = validate;
   });
 
   const flush = useCallback(() => {
@@ -97,6 +101,28 @@ export function useLocalDraft<T>(
     };
   }, [flush]);
 
+  // Same draft changed in another tab (edited, sent or cleared): take that version, drop the pending save here.
+  useEffect(() => {
+    if (!key) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return; // storage blocked: nothing is shared between tabs
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== storage || (e.key !== null && e.key !== key)) return;
+      if (pending.current?.key === key) pending.current = null;
+      const value =
+        e.key === null || e.newValue === null
+          ? initialRef.current
+          : readDraft(key, initialRef.current, validateRef.current);
+      setState({ key, value, dirty: false });
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [key]);
+
   const set = useCallback<SetDraft<T>>((v) => {
     setState((s) => ({
       key: s.key,
@@ -111,7 +137,12 @@ export function useLocalDraft<T>(
     setState({ key, value: initialRef.current, dirty: false });
   }, [key]);
 
-  return [current.value, set, clear];
+  const reload = useCallback(() => {
+    flush();
+    setState({ key, value: readDraft(key, initialRef.current, validateRef.current), dirty: false });
+  }, [key, flush]);
+
+  return [current.value, set, clear, reload];
 }
 
 const subscribeNothing = () => () => {};

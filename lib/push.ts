@@ -99,7 +99,8 @@ export async function notifySiteUsers(opts: { site: string; siteName: string; se
   try {
     await connectDB();
     const users = await User.find(
-      { site: opts.site, pushToken: { $exists: true, $ne: "" } },
+      // Only validated accounts: a refused or revoked person gets no notification.
+      { site: opts.site, verified: true, pushToken: { $exists: true, $ne: "" } },
       { pushToken: 1, _id: 0 },
     ).lean<{ pushToken?: string }[]>();
     const tokens = users.map((u) => u.pushToken || "").filter(Boolean);

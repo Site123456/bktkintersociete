@@ -29,6 +29,8 @@ export type AppHeaderProps = {
   /** When given (with onSiteChange), a site switcher is shown next to the logo. */
   sites?: SiteOption[];
   onSiteChange?: (slug: string) => void;
+  /** false hides the section links (e.g. an account that is not validated yet cannot use them). */
+  nav?: boolean;
 };
 
 const NAV: { key: NavKey; href: string; label: string; icon: LucideIcon; adminOnly?: boolean }[] = [
@@ -70,12 +72,12 @@ function ThemeMenu() {
  * Sticky app header: logo, optional site switcher, nav (icons only under 640px), theme menu, Clerk user menu.
  * Fits a 360px wide screen. Pages should give their <main> the id "main" (skip link target).
  */
-export function AppHeader({ active, role, site = null, sites, onSiteChange }: AppHeaderProps) {
-  const items = NAV.filter((n) => !n.adminOnly || role === "admin");
+export function AppHeader({ active, role, site = null, sites, onSiteChange, nav = true }: AppHeaderProps) {
+  const items = nav ? NAV.filter((n) => !n.adminOnly || role === "admin") : [];
   const showSwitcher = Boolean(sites && sites.length > 0 && onSiteChange);
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 print:hidden">
+    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-lg print:hidden">
       <a
         href="#main"
         className="sr-only rounded-md bg-card px-3 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"

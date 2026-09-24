@@ -108,9 +108,33 @@ const MessageSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: false }, versionKey: false },
 );
 MessageSchema.index({ site: 1, createdAt: -1 });
-// Optional automatic clean-up of old chat messages (CHAT_RETENTION_DAYS, off by default).
-if (env.chatRetentionDays > 0) {
-  MessageSchema.index({ createdAt: 1 }, { expireAfterSeconds: env.chatRetentionDays * 86400 });
-}
 
 export const Message = mongoose.models.Message || mongoose.model("Message", MessageSchema);
+
+let retentionSync: Promise<void> | null = null;
+/**
+ * Optional automatic clean-up of old chat messages (CHAT_RETENTION_DAYS, off by default). Checked once
+ * per server start: the TTL index is created, updated or removed to follow the setting, so turning it
+ * off or changing it takes effect without touching the database by hand.
+ */
+export function syncChatRetention(): Promise<void> {
+  retentionSync ??= (async () => {
+    const col = (Message as mongoose.Model<unknown>).collection;
+    const seconds = env.chatRetentionDays * 86400;
+    const indexes = await col.indexes().catch(() => []);
+    const ttl = indexes.find((i) => i.key && Object.keys(i.key).length === 1 && i.key.createdAt === 1);
+    if (!seconds) {
+      if (ttl?.name && ttl.expireAfterSeconds !== undefined) await col.dropIndex(ttl.name);
+      return;
+    }
+    if (!ttl) await col.createIndex({ createdAt: 1 }, { expireAfterSeconds: seconds });
+    else if (ttl.expireAfterSeconds !== seconds) {
+      const db = mongoose.connection.db;
+      if (db) await db.command({ collMod: col.collectionName, index: { keyPattern: { createdAt: 1 }, expireAfterSeconds: seconds } });
+    }
+  })().catch((err) => {
+    retentionSync = null;
+    console.error("chat retention:", err instanceof Error ? err.message : "unknown error");
+  });
+  return retentionSync;
+}

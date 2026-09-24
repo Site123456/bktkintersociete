@@ -38,6 +38,8 @@ export async function GET(req: Request) {
 
     let user: Row | null;
     if (caller.kind === "session") {
+      const limited = rateLimit(req, "user-sync:get:session", 60);
+      if (limited) return limited;
       user = await ensureUser(caller.clerkId);
     } else {
       const limited = rateLimit(req, "user-sync:get", 120);

@@ -59,13 +59,17 @@ if (!uri) {
 
 const str = (v, max = 200) => (typeof v === "string" || typeof v === "number" ? String(v).trim().slice(0, max) : "");
 const num = (v) => {
-  const n = typeof v === "number" ? v : Number(v);
+  // "1,5" (decimal comma) or " 2 " stored as text by old app versions.
+  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 };
+const parisDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" });
+/** A plain day is kept as is; a moment in time is read in Paris time. */
 const toYmd = (v) => {
-  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())) return v.trim();
   const d = v instanceof Date ? v : typeof v === "string" || typeof v === "number" ? new Date(v) : null;
-  return d && !Number.isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  if (d && !Number.isNaN(d.getTime())) return parisDay.format(d);
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : "";
 };
 /** Never keep an e-mail address as the author: "jean.dupont@x.fr" → "jean.dupont". */
 const withoutEmail = (s) => (s.includes("@") ? s.split("@")[0].trim() : s);
@@ -78,12 +82,40 @@ function formatBytes(n) {
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-/** Legacy delivery document → compact v2 document (without _id), or null when it cannot be converted. */
+const blank = (v) => v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+const readableQty = (v) => blank(v) || Number.isFinite(typeof v === "number" ? v : Number(String(v).replace(/\s/g, "").replace(",", ".")));
+
+/**
+ * Why a document cannot be converted without losing information, or "" when it can. Such documents
+ * are left exactly as they are (and listed), never partly converted.
+ */
+function lossReason(doc) {
+  const compact = Array.isArray(doc.i);
+  const raw = compact ? doc.i : Array.isArray(doc.items) ? doc.items : null;
+  if (!raw) return "no list of lines";
+  for (const l of raw) {
+    const ok = compact ? Array.isArray(l) : Boolean(l && typeof l === "object" && !Array.isArray(l));
+    if (!ok) return "a line cannot be read";
+    const [name, qty, unit] = compact ? [l[0], l[1], l[2]] : [l.name, l.qty, l.unit];
+    const named = (typeof name === "string" && name.trim() !== "") || typeof name === "number";
+    if (!named) {
+      if (!blank(qty)) return "a line has a quantity but no name";
+      continue;
+    }
+    if (!readableQty(qty)) return "a quantity cannot be read";
+    if (String(name).trim().length > 200 || (!blank(unit) && String(unit).trim().length > 200)) return "a text is too long";
+  }
+  return "";
+}
+
+/** Legacy delivery document → compact v2 document (without _id), or { skip: reason }. */
 function toV2(doc) {
   const kind = doc.k === "stock" || doc.docType === "stock" || doc.type === "stock" ? "stock" : "bl";
   const slug =
     str(doc.s) || str(doc.site && typeof doc.site === "object" ? doc.site.slug : "") || (typeof doc.site === "string" ? str(doc.site) : "");
-  if (!SITE_SLUG_RE.test(slug)) return null;
+  if (!SITE_SLUG_RE.test(slug)) return { skip: "no valid site code" };
+  const loss = lossReason(doc);
+  if (loss) return { skip: loss };
 
   const idTime = typeof doc._id?.getTimestamp === "function" ? doc._id.getTimestamp() : null;
   const date = toYmd(doc.d) || toYmd(doc.date) || toYmd(doc.createdAt) || toYmd(idTime);
@@ -120,7 +152,7 @@ function fieldsToUnset(doc, fields, emptyFields = []) {
 
 /**
  * Scans a collection. `plan(doc)` returns { op, after } (a bulkWrite operation and the document as it
- * will be stored), "skip" when the document cannot be changed safely, or null when nothing changes.
+ * will be stored), { skip: reason } when the document cannot be changed without loss, or null when nothing changes.
  */
 async function processCollection(db, name, plan, filter = {}) {
   const found = await db.listCollections({ name }, { nameOnly: true }).toArray();
@@ -130,6 +162,7 @@ async function processCollection(db, name, plan, filter = {}) {
   }
   const col = db.collection(name);
   const s = { scanned: 0, changed: 0, skipped: 0, before: 0, after: 0, written: 0 };
+  const reasons = new Map();
   let batch = [];
   const flush = async () => {
     if (batch.length === 0) return;
@@ -144,8 +177,12 @@ async function processCollection(db, name, plan, filter = {}) {
     s.scanned++;
     const p = plan(doc);
     if (p === null) continue;
-    if (p === "skip") {
+    if (p && p.skip) {
       s.skipped++;
+      const r = reasons.get(p.skip) ?? { count: 0, ids: [] };
+      r.count++;
+      if (r.ids.length < 10) r.ids.push(String(doc._id));
+      reasons.set(p.skip, r);
       continue;
     }
     s.changed++;
@@ -159,16 +196,19 @@ async function processCollection(db, name, plan, filter = {}) {
   const saved = s.before - s.after;
   const verb = APPLY ? "changed" : "would change";
   let line = `  ${name.padEnd(15)} ${String(s.scanned).padStart(6)} scanned, ${String(s.changed).padStart(6)} ${verb}`;
-  if (s.skipped) line += `, ${s.skipped} skipped (no valid site code)`;
+  if (s.skipped) line += `, ${s.skipped} left untouched`;
   if (s.changed) line += ` · ${formatBytes(s.before)} → ${formatBytes(s.after)} (saves ${formatBytes(saved)})`;
   if (APPLY) line += ` · ${s.written} written`;
   console.log(line);
+  for (const [reason, r] of reasons) {
+    console.log(`      untouched, ${reason}: ${r.count} (e.g. ${r.ids.join(", ")}${r.count > r.ids.length ? ", …" : ""})`);
+  }
   return { changed: s.changed, saved, written: s.written };
 }
 
 const deliveriesPlan = (doc) => {
   const v2 = toV2(doc);
-  if (!v2) return "skip";
+  if (v2.skip) return v2;
   return {
     op: { replaceOne: { filter: { _id: doc._id, v: { $ne: 2 } }, replacement: v2 } },
     after: { _id: doc._id, ...v2 },

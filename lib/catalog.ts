@@ -38,11 +38,21 @@ export function isBuiltIn(name: string): boolean {
 }
 
 /** Adds a team product if no product with the same name exists (case and accents ignored). */
+/**
+ * The team product with the same name (same rule as the catalogue: case, accents and punctuation
+ * ignored), optionally other than `exceptId`. The collection is small: names only are read.
+ */
+export async function findCustomNamed(name: string, exceptId?: string): Promise<{ _id: unknown; uniquename: string } | null> {
+  const key = normalizeKey(name);
+  if (!key) return null;
+  await connectDB();
+  const rows = await CustomProduct.find({}, { uniquename: 1 }).lean<{ _id: unknown; uniquename: string }[]>();
+  return rows.find((r) => normalizeKey(r.uniquename) === key && String(r._id) !== exceptId) ?? null;
+}
+
 export async function addCustomProduct(name: string, unit?: string): Promise<{ created: boolean }> {
   if (isBuiltIn(name)) return { created: false };
-  await connectDB();
-  const existing = await CustomProduct.findOne({ uniquename: name }).collation({ locale: "fr", strength: 1 }).lean();
-  if (existing) return { created: false };
+  if (await findCustomNamed(name)) return { created: false };
   await CustomProduct.create(unit ? { uniquename: name, typedequantite: unit } : { uniquename: name });
   return { created: true };
 }

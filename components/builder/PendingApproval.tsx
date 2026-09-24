@@ -14,7 +14,7 @@ export type PendingApprovalProps = {
 export function PendingApproval({ email, role }: PendingApprovalProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <AppHeader active={null} role={role} />
+      <AppHeader active={null} role={role} nav={false} />
       <main id="main" className="flex flex-1 items-start justify-center px-4 py-10 sm:items-center sm:py-16">
         <section aria-labelledby="pending-title" className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm sm:p-8">
           <span className="flex size-11 items-center justify-center rounded-full bg-warning/10 text-warning" aria-hidden>
@@ -24,8 +24,8 @@ export function PendingApproval({ email, role }: PendingApprovalProps) {
             Compte en attente de validation
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Un administrateur doit valider votre compte avant que vous puissiez créer des bons de livraison et des
-            inventaires. Prévenez votre responsable si besoin.
+            Un administrateur doit valider votre compte avant que vous puissiez créer des bons de livraison et des inventaires.
+            Prévenez votre responsable si besoin.
           </p>
 
           {email ? (

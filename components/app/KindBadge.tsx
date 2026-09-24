@@ -21,13 +21,16 @@ export function KindBadge({ kind, compact = false, className }: KindBadgeProps) 
       title={compact ? (bl ? "Bon de livraison" : "État des stocks") : undefined}
       className={cn(
         "gap-1.5",
-        bl
-          ? "border-primary/30 bg-primary/5 text-primary dark:bg-primary/15 dark:text-foreground"
-          : "border-info/30 bg-info/5 text-info dark:bg-info/10",
+        compact
+          ? // Dense lists: a quiet label, the coloured icon carries the type.
+            "border-transparent bg-muted px-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
+          : bl
+            ? "border-primary/30 bg-primary/5 text-primary dark:bg-primary/15 dark:text-foreground"
+            : "border-info/30 bg-info/5 text-info dark:bg-info/10",
         className,
       )}
     >
-      <Icon aria-hidden className={bl ? "text-primary" : undefined} />
+      <Icon aria-hidden className={bl ? "text-primary" : "text-info"} />
       {label}
     </Badge>
   );

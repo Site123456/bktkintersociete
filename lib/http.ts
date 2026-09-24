@@ -56,3 +56,19 @@ export function rateLimit(req: Request, route: string, max = 60, windowMs = 60_0
   }
   return null;
 }
+
+/**
+ * A change (POST, PATCH, DELETE…) sent by a browser from another site. Browsers always send Origin on
+ * such requests; the mobile app sends none. The Clerk cookie is SameSite=Lax: this is a second check.
+ */
+export function isCrossSiteWrite(req: Request): boolean {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return false;
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  const host = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").split(",")[0].trim();
+  try {
+    return new URL(origin).host !== host;
+  } catch {
+    return true;
+  }
+}

@@ -21,7 +21,7 @@ const isRealYmd = (s: string) => {
 
 export async function POST(req: Request) {
   try {
-    const session = await requireVerifiedSession();
+    const session = await requireVerifiedSession(undefined, req);
     if (!session.ok) return json({ ok: false, error: session.error }, session.status);
     const limited = rateLimit(req, "documents:post", 20);
     if (limited) return limited;
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     const author = displayName(session.user);
     const date = todayParis();
-    const id = await insertDocument(
+    const saved = await insertDocument(
       encodeDocument({
         kind: input.kind,
         site: site.slug,
@@ -58,13 +58,17 @@ export async function POST(req: Request) {
         author,
         authorId: session.clerkId,
         note: input.note || undefined,
+        requestId: input.requestId,
         lines,
       }),
     );
 
-    after(() => notifySiteUsers({ site: site.slug, siteName: site.shortName, senderName: author, kind: input.kind }));
+    // A retry of a send that already went through: same document, no second notification.
+    if (!saved.existing) {
+      after(() => notifySiteUsers({ site: site.slug, siteName: site.shortName, senderName: author, kind: input.kind }));
+    }
 
-    return json({ ok: true, id, number: documentNumber(input.kind, date, id) });
+    return json({ ok: true, id: saved.id, number: documentNumber(input.kind, saved.date, saved.id) });
   } catch (err) {
     console.error("POST /api/documents:", err instanceof Error ? err.message : "unknown error");
     return serverError();
@@ -80,7 +84,7 @@ const listQuery = z.object({
 
 export async function GET(req: Request) {
   try {
-    const session = await requireVerifiedSession();
+    const session = await requireVerifiedSession(undefined, req);
     if (!session.ok) return json({ ok: false, error: session.error }, session.status);
 
     const params = new URL(req.url).searchParams;

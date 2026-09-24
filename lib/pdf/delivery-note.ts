@@ -42,19 +42,33 @@ const LAYOUTS: Layout[] = [
 
 // WinAnsi (the standard PDF fonts) covers Latin-1 plus a few typographic signs.
 const WIN_ANSI_EXTRA = new Set("€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ");
+const printable = (ch: string) => {
+  const c = ch.codePointAt(0) ?? 0;
+  return (c >= 0x20 && c <= 0x7e) || (c >= 0xa0 && c <= 0xff) || WIN_ANSI_EXTRA.has(ch);
+};
+// Letters that Unicode does not decompose to a Latin base letter.
+const TRANSLIT: Record<string, string> = { Ł: "L", ł: "l", Đ: "D", đ: "d", Ħ: "H", ħ: "h", ı: "i", Ŧ: "T", ŧ: "t", ŋ: "n", Ŋ: "N" };
+
+/**
+ * Text the standard PDF fonts can print. Letters outside Latin-1 become their closest Latin letter
+ * (Ż → Z, ễ → e, Ł → L); anything else (other alphabets, emoji) becomes "?" so that a name is never
+ * silently emptied; invisible marks are removed; every kind of space becomes a plain space.
+ */
 function clean(value: unknown): string {
   const s = (typeof value === "string" || typeof value === "number" ? String(value) : "").normalize("NFC");
   let out = "";
   for (const ch of s) {
     const c = ch.codePointAt(0) ?? 0;
-    if (c === 0x2713 || c === 0x2714) out += "x";
-    else if (c >= 0x20 && c <= 0x7e) out += ch;
-    else if (c >= 0xa0 && c <= 0xff) out += ch;
-    else if (WIN_ANSI_EXTRA.has(ch)) out += ch;
-    else if (c === 0x09 || c === 0x0a) out += " ";
-    // anything else (emoji, other scripts) is dropped
+    if (/\s/u.test(ch) || c < 0x20 || (c >= 0x7f && c < 0xa0)) out += " ";
+    else if (c === 0x2713 || c === 0x2714) out += "x";
+    else if (printable(ch)) out += ch;
+    else if (/[\p{M}\p{Cf}]/u.test(ch)) continue;
+    else {
+      const base = TRANSLIT[ch] ?? ch.normalize("NFD").replace(/\p{M}/gu, "");
+      out += base && [...base].every(printable) ? base : "?";
+    }
   }
-  return out.replace(/\s+/g, " ").trim();
+  return out.replace(/\s+/g, " ").replace(/\?{2,}/g, "??").trim();
 }
 
 const plural = (n: number, word: string) => `${formatQty(n)} ${word}${Math.abs(n) > 1 ? "s" : ""}`;
@@ -65,7 +79,8 @@ type Block = { x: number; w: number };
 export async function renderDeliveryNote(doc: DeliveryView, opts: { url: string }): Promise<ArrayBuffer> {
   const isStock = doc.kind === "stock";
   const pdf = new jsPDF({ unit: "mm", format: "a4", compress: true });
-  const lines = doc.lines.filter((l) => clean(l.name));
+  // Every line with a name is printed, even when its letters cannot all be printed.
+  const lines = doc.lines.filter((l) => l.name.trim());
   const totalQty = lines.reduce((s, l) => s + (Number.isFinite(l.qty) ? l.qty : 0), 0);
   const month = isStock && doc.date ? formatDateLong(doc.date).replace(/^\S+\s+\d+\s+/, "").toUpperCase() : "";
   const title = isStock ? (month ? `ÉTAT DES STOCKS (${month})` : "ÉTAT DES STOCKS") : "BON DE LIVRAISON";
@@ -166,9 +181,12 @@ export async function renderDeliveryNote(doc: DeliveryView, opts: { url: string 
       y += 4.4;
     }
     font(9, 110);
+    // Address lines (editable by an admin) wrap to the column so they never run under the boxes.
     for (const l of doc.siteAddress.length ? doc.siteAddress : ["Adresse non renseignée"]) {
-      text(l, M, y);
-      y += 4;
+      for (const w of wrap(l, 56, 2)) {
+        text(w, M, y);
+        y += 4;
+      }
     }
 
     pdf.addImage(qr, "PNG", W - M - 30, top - 2, 30, 30);
@@ -185,10 +203,12 @@ export async function renderDeliveryNote(doc: DeliveryView, opts: { url: string 
 
   /* ───────── Header (next pages) ───────── */
   const drawCompactHeader = () => {
+    const left = `BKTK INTERNATIONAL · ${title}`;
     font(10, 30);
-    text(`BKTK INTERNATIONAL · ${title}`, M, 14);
+    text(left, M, 14);
+    const leftW = pdf.getTextWidth(clean(left));
     font(8, 110);
-    text(`REF : ${doc.number} · ${doc.siteShortName}`, W - M, 14, "right");
+    text(wrap(`REF : ${doc.number} · ${doc.siteShortName}`, W - 2 * M - leftW - 6, 1)[0] ?? "", W - M, 14, "right");
     pdf.setDrawColor(220);
     pdf.setLineWidth(0.2);
     pdf.line(M, 18, W - M, 18);
@@ -249,8 +269,15 @@ export async function renderDeliveryNote(doc: DeliveryView, opts: { url: string 
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
-  const noteLines = doc.note ? wrap(`Remarque : ${doc.note}`, W - 2 * M - 70, 3) : [];
-  const tailH = Math.max(TOTAL_H, noteLines.length ? 3 + noteLines.length * 3.8 : 0);
+  // The whole remark (up to 500 characters), full width under the total, line breaks kept.
+  const noteLines = doc.note
+    ? doc.note
+        .split(/\r?\n/)
+        .map((p, i) => (i === 0 ? `Remarque : ${p}` : p))
+        .flatMap((p) => (clean(p) ? wrap(p, W - 2 * M, 20) : []))
+        .slice(0, 16)
+    : [];
+  const tailH = TOTAL_H + (noteLines.length ? 1.5 + noteLines.length * 3.8 : 0);
 
   const tableTop = drawHeader() + 5;
   const rowsTop = (top: number) => top + HEAD_H;
@@ -362,7 +389,7 @@ export async function renderDeliveryNote(doc: DeliveryView, opts: { url: string 
   // Note, when there is one
   if (noteLines.length) {
     font(8.5, 60);
-    noteLines.forEach((l, k) => text(l, M, y + 5.6 + k * 3.8));
+    noteLines.forEach((l, k) => text(l, M, y + TOTAL_H + 3.5 + k * 3.8));
   }
 
   /* ───────── Footer on every page ───────── */

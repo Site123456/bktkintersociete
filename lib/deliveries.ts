@@ -31,6 +31,8 @@ export type StoredV2 = {
   a: string;
   au?: string;
   n?: string;
+  /** Request id of a website send (duplicate protection); not shown anywhere. */
+  q?: string;
   i: StoredLine[];
 };
 
@@ -38,18 +40,31 @@ let indexes: Promise<unknown> | null = null;
 async function collection() {
   const db = await getDb();
   const col = db.collection(COLLECTION);
-  indexes ??= col.createIndex({ s: 1, _id: -1 }, { name: "site_recent" }).catch(() => (indexes = null));
+  // One index per site field: compact documents (s) and old website documents (site.slug), so both
+  // branches of the site filter are served by an index.
+  indexes ??= Promise.all([
+    col.createIndex({ s: 1, _id: -1 }, { name: "site_recent" }),
+    col.createIndex(
+      { "site.slug": 1, _id: -1 },
+      { name: "legacy_site_recent", partialFilterExpression: { "site.slug": { $exists: true } } },
+    ),
+    col.createIndex({ q: 1 }, { name: "request_once", unique: true, partialFilterExpression: { q: { $exists: true } } }),
+  ]).catch(() => (indexes = null));
   return col;
 }
 
+const parisDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" });
+
+/** Any date value → YYYY-MM-DD. A plain day is kept as is; a moment in time is read in Paris time. */
 export const toYmd = (v: unknown): string => {
-  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())) return v.trim();
   const d = v instanceof Date ? v : typeof v === "string" || typeof v === "number" ? new Date(v) : null;
-  return d && !Number.isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  if (d && !Number.isNaN(d.getTime())) return parisDay.format(d);
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : "";
 };
 
 /** Today in Paris, as YYYY-MM-DD. */
-export const todayParis = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+export const todayParis = () => parisDay.format(new Date());
 
 /** Human document number, e.g. BL-260924-7F3A2C or INV-260930-0B91D4 (derived, never stored). */
 export function documentNumber(kind: DocKind, date: string, id: string): string {
@@ -58,7 +73,8 @@ export function documentNumber(kind: DocKind, date: string, id: string): string 
 }
 
 const num = (v: unknown) => {
-  const n = typeof v === "number" ? v : Number(v);
+  // Old app documents may store "1,5" (decimal comma) or " 2 " as text.
+  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 };
 const str = (v: unknown, max = 200) => (typeof v === "string" || typeof v === "number" ? String(v).trim().slice(0, max) : "");
@@ -103,8 +119,8 @@ export function decodeDocument(doc: Document, sites?: Map<string, SiteInfo>): De
   const site = (siteSlug && sites?.get(siteSlug)) || defaultSite(siteSlug);
   const date = doc.v === 2 ? str(doc.d) : toYmd(doc.date) || toYmd(doc.createdAt) || toYmd((doc._id as ObjectId)?.getTimestamp?.());
   const requested = doc.v === 2 ? str(doc.r) : toYmd(doc.requestedDeliveryDate);
-  const author =
-    doc.v === 2 ? str(doc.a, 60) : str(doc.username, 60) || str(doc.user, 60) || str(doc.signedBy, 60).split("@")[0];
+  // Old documents may hold an e-mail address as author: only its first part is shown.
+  const author = (doc.v === 2 ? str(doc.a, 60) : str(doc.username, 60) || str(doc.user, 60) || str(doc.signedBy, 60)).split("@")[0];
   const createdAt = doc._id instanceof ObjectId ? doc._id.getTimestamp().toISOString() : toYmd(doc.createdAt);
   return {
     id,
@@ -131,6 +147,7 @@ export function encodeDocument(input: {
   author: string;
   authorId?: string;
   note?: string;
+  requestId?: string;
   lines: DeliveryLine[];
 }): StoredV2 {
   const doc: StoredV2 = {
@@ -144,6 +161,7 @@ export function encodeDocument(input: {
   if (input.kind === "bl" && input.requestedDate) doc.r = input.requestedDate;
   if (input.authorId) doc.au = input.authorId;
   if (input.note) doc.n = input.note;
+  if (input.requestId) doc.q = input.requestId;
   return doc;
 }
 
@@ -166,10 +184,27 @@ export function tidyLines(lines: DeliveryLine[], keepZero = false): DeliveryLine
   return out;
 }
 
-export async function insertDocument(doc: StoredV2): Promise<string> {
+/**
+ * Saves a document and returns its id. With a request id (doc.q), a second send of the same request
+ * (e.g. a retry after a lost answer) returns the first document instead of creating a copy.
+ */
+export async function insertDocument(doc: StoredV2): Promise<{ id: string; date: string; existing: boolean }> {
   const col = await collection();
-  const res = await col.insertOne(doc as Document);
-  return res.insertedId.toString();
+  if (doc.q) {
+    await indexes;
+    const found = await col.findOne({ q: doc.q }, { projection: { _id: 1, d: 1 } });
+    if (found) return { id: String(found._id), date: str(found.d) || doc.d, existing: true };
+  }
+  try {
+    const res = await col.insertOne(doc as Document);
+    return { id: res.insertedId.toString(), date: doc.d, existing: false };
+  } catch (err) {
+    if (doc.q && (err as { code?: number })?.code === 11000) {
+      const found = await col.findOne({ q: doc.q }, { projection: { _id: 1, d: 1 } });
+      if (found) return { id: String(found._id), date: str(found.d) || doc.d, existing: true };
+    }
+    throw err;
+  }
 }
 
 export async function getDocument(id: string): Promise<DeliveryView | null> {
@@ -217,7 +252,11 @@ export async function monthRecap(site: string): Promise<DeliveryLine[]> {
 /** Products most often ordered by a site recently (for the "fréquents" shortcuts). */
 export async function frequentProducts(site: string, max = 12): Promise<{ name: string; unit: string; count: number }[]> {
   const col = await collection();
-  const docs = await col.find(siteFilter(site)).sort({ _id: -1 }).limit(40).toArray();
+  const docs = await col
+    .find(siteFilter(site), { projection: { i: 1, items: 1, k: 1, docType: 1, type: 1, v: 1 } })
+    .sort({ _id: -1 })
+    .limit(80)
+    .toArray();
   const counts = new Map<string, { name: string; unit: string; count: number }>();
   for (const d of docs) {
     const v = decodeDocument(d);

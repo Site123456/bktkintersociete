@@ -306,17 +306,17 @@ export function HistoryList({ initial, sites, filters, today }: HistoryListProps
             }
           />
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {groups.map((g, i) => (
               <section key={`${g.key}-${i}`} aria-labelledby={`day-${i}`}>
                 <h2
                   id={`day-${i}`}
-                  className="sticky top-14 z-10 -mx-1 flex items-baseline gap-2 bg-background/95 px-1 py-2 text-sm font-semibold"
+                  className="sticky top-14 z-10 flex items-baseline gap-2 bg-background/85 py-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase backdrop-blur-md"
                 >
                   {g.label}
-                  <span className="tabular text-xs font-normal text-muted-foreground">{g.docs.length}</span>
+                  <span className="tabular font-normal">{g.docs.length}</span>
                 </h2>
-                <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
+                <ul className="divide-y divide-border/70 border-y border-border/70">
                   {g.docs.map((d) => (
                     <HistoryRow key={d.id} doc={d} query={searching ? deferredQuery : ""} onOpen={openDoc} />
                   ))}

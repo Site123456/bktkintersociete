@@ -15,6 +15,7 @@ import { Plus, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { formatUnit, matchesQuery, normalizeKey, searchScore } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,8 @@ export type ProductPickerProps = {
   /** Accessible name of the search field. */
   label?: string;
   id?: string;
+  /** Keyboard shortcut shown inside the empty field on desktop (e.g. "/"). */
+  shortcut?: string;
   className?: string;
 };
 
@@ -120,7 +123,7 @@ function keepFocus(e: MouseEvent<HTMLElement>) {
 
 /**
  * Product search combobox: ranked results (accents/case ignored, several words), keyboard navigation,
- * "Fréquents pour ce site" when empty, and an inline form to add a product that is not in the catalogue.
+ * the site's frequent products when empty (if given), and an inline form to add a product that is not in the catalogue.
  */
 export function ProductPicker({
   products,
@@ -131,6 +134,7 @@ export function ProductPicker({
   autoFocus,
   label = "Rechercher un produit",
   id,
+  shortcut,
   className,
 }: ProductPickerProps) {
   const autoId = useId();
@@ -302,8 +306,13 @@ export function ProductPicker({
           onFocus={() => setOpen(true)}
           onClick={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          className="h-12 rounded-xl bg-card pr-12 pl-11 text-base shadow-xs sm:h-11 md:text-sm"
+          className="h-12 rounded-xl bg-card pr-12 pl-11 text-base shadow-xs pointer-fine:h-11 pointer-fine:text-sm"
         />
+        {!query && shortcut ? (
+          <Kbd className="absolute top-1/2 right-3 hidden -translate-y-1/2 pointer-fine:inline-flex" aria-hidden>
+            {shortcut}
+          </Kbd>
+        ) : null}
         {query ? (
           <button
             type="button"
@@ -401,10 +410,7 @@ export function ProductPicker({
                 id={listId}
                 role="listbox"
                 aria-label={showFrequent ? "Fréquents pour ce site" : "Produits"}
-                className={cn(
-                  "max-h-[60vh] overflow-y-auto overscroll-contain p-1.5",
-                  showFrequent && "flex flex-wrap gap-2 p-3",
-                )}
+                className="max-h-[min(60vh,28rem)] overflow-y-auto overscroll-contain p-1.5"
               >
                 {options.map((o, i) => {
                   const selected = i === activeIndex;
@@ -440,21 +446,6 @@ export function ProductPicker({
                   }
                   const p = o.product;
                   const unit = formatUnit(p.unit);
-                  if (showFrequent) {
-                    return (
-                      <div
-                        key={`${i}-${p.name}|${p.unit}`}
-                        {...common}
-                        className={cn(
-                          "inline-flex min-h-11 max-w-full cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3.5 text-sm transition-colors sm:min-h-9",
-                          selected && "border-ring bg-accent text-accent-foreground",
-                        )}
-                      >
-                        <span className="truncate font-medium">{p.name}</span>
-                        {unit ? <span className="shrink-0 text-xs text-muted-foreground">{unit}</span> : null}
-                      </div>
-                    );
-                  }
                   return (
                     <div
                       key={`${i}-${p.name}|${p.unit}`}
@@ -465,7 +456,7 @@ export function ProductPicker({
                       )}
                     >
                       <span className="min-w-0 flex-1 font-medium break-words">
-                        <Highlight text={p.name} query={query} />
+                        {hasQuery ? <Highlight text={p.name} query={query} /> : p.name}
                       </span>
                       {p.custom ? (
                         <Badge variant="outline" className="text-muted-foreground">
@@ -473,9 +464,14 @@ export function ProductPicker({
                         </Badge>
                       ) : null}
                       {unit ? (
-                        <Badge variant="secondary" className="max-w-[45%] font-normal text-muted-foreground">
-                          <span className="min-w-0 truncate">{unit}</span>
-                        </Badge>
+                        <span
+                          className={cn(
+                            "max-w-[45%] shrink-0 truncate text-xs text-muted-foreground",
+                            selected && "text-accent-foreground/80",
+                          )}
+                        >
+                          {unit}
+                        </span>
                       ) : null}
                     </div>
                   );
@@ -485,49 +481,6 @@ export function ProductPicker({
           )}
         </div>
       ) : null}
-    </div>
-  );
-}
-
-export type FrequentChipsProps = {
-  items: FrequentItem[];
-  onPick: (item: FrequentItem) => void;
-  /** Heading above the chips; pass "" to hide it. */
-  label?: string;
-  className?: string;
-};
-
-/** Horizontal, scrollable row of "frequent product" chips. Renders nothing when empty. */
-export function FrequentChips({ items, onPick, label = "Fréquents pour ce site", className }: FrequentChipsProps) {
-  const headingId = useId();
-  if (!items.length) return null;
-  return (
-    <div className={cn("min-w-0 space-y-2", className)}>
-      {label ? (
-        <p id={headingId} className="text-xs font-medium text-muted-foreground">
-          {label}
-        </p>
-      ) : null}
-      <ul aria-labelledby={label ? headingId : undefined} className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-        {items.map((it, i) => {
-          const unit = formatUnit(it.unit);
-          return (
-            <li key={`${i}-${it.name}|${it.unit}`} className="shrink-0">
-              <button
-                type="button"
-                onClick={() => onPick(it)}
-                aria-label={`Ajouter ${it.name}${unit ? `, ${unit}` : ""}`}
-                title={it.count ? `${it.count} fois récemment` : undefined}
-                className="inline-flex h-11 items-center gap-1.5 rounded-full border bg-card px-3.5 text-sm whitespace-nowrap transition-colors hover:bg-accent hover:text-accent-foreground sm:h-9"
-              >
-                <Plus className="size-4 text-muted-foreground" aria-hidden />
-                <span className="font-medium">{it.name}</span>
-                {unit ? <span className="text-xs text-muted-foreground">{unit}</span> : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }

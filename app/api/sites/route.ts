@@ -1,6 +1,7 @@
 import { z } from "zod";
 import connectDB from "@/lib/connectDB";
-import { getCaller, getSessionUser } from "@/lib/auth";
+import { getCaller } from "@/lib/auth";
+import { adminGuard } from "@/app/api/admin/_lib/guard";
 import { forbidden, json, rateLimit, readBody, serverError, unauthorized } from "@/lib/http";
 import { Site, type SiteDoc } from "@/lib/models";
 import { DEFAULT_SITES, defaultSite } from "@/lib/sites";
@@ -8,7 +9,8 @@ import { siteSlug } from "@/lib/validation";
 
 /*
  * Restaurant sites. GET: mobile app (x-api-key) or anyone signed in (a new account picks its site
- * before being validated; addresses are public). POST (create / edit): app key (legacy) or admin.
+ * before being validated; addresses are public). POST: admins (create / edit), or the app key to create
+ * a new site only (never to change an existing one).
  */
 
 const text = (max: number) =>
@@ -77,15 +79,26 @@ export async function POST(req: Request) {
     const caller = await getCaller(req);
     if (!caller) return unauthorized();
     if (caller.kind === "session") {
-      const user = await getSessionUser(caller.clerkId);
-      if (!user?.verified || user.role !== "admin") return forbidden("Réservé aux administrateurs");
+      // Website: validated admins only, from this site (same checks as /api/admin/*).
+      const guard = await adminGuard(req, "sites-post");
+      if (!guard.ok) return guard.response;
+    } else {
+      const limited = rateLimit(req, "sites:post", 30);
+      if (limited) return limited;
     }
-    const limited = rateLimit(req, "sites:post", 30);
-    if (limited) return limited;
 
     const body = await readBody(req, siteBody);
     if ("error" in body) return body.error;
     const { slug, name, line1, line2 } = body.data;
+
+    // The mobile app key (which may have leaked) can add a new site but never rewrite an existing
+    // one: names and addresses are printed on every document.
+    if (caller.kind === "app") {
+      await connectDB();
+      if (defaultSite(slug) || (await Site.exists({ slug }))) {
+        return forbidden("Ce site existe déjà : ses coordonnées se modifient depuis l’administration du site web.");
+      }
+    }
 
     const set: Record<string, string | boolean> = { name, active: true };
     const unset: Record<string, 1> = {};

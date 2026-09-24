@@ -89,6 +89,9 @@ export async function apiFetch<T>(
   return body as T;
 }
 
+/** The request or its answer was lost (no connection): the server may still have done the work. */
+export const isNetworkError = (err: unknown): boolean => err instanceof ApiError && err.status === 0;
+
 /** Toast for a failed call (nothing for an expired session: the page is reloading). */
 export function toastError(err: unknown, title?: string) {
   if (err instanceof DOMException && err.name === "AbortError") return;

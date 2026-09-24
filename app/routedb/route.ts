@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 
     const date = toYmd(input.date ?? "");
     const requested = toYmd(input.requestedDeliveryDate ?? "");
-    const id = await insertDocument(
+    const { id } = await insertDocument(
       encodeDocument({
         kind,
         site: slug,

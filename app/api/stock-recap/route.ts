@@ -3,17 +3,22 @@ import { forbidden, json, rateLimit, serverError, unauthorized } from "@/lib/htt
 import { monthRecap } from "@/lib/deliveries";
 import { SITE_SLUG_RE } from "@/lib/sites";
 
-/** Everything ordered for a site since the 1st of the month. Mobile app key or validated session. */
+/**
+ * Everything ordered for a site since the 1st of the month (read-only totals).
+ * Mobile app key, validated session, or — as before the rebuild, for app versions that call it
+ * without a key — no credentials at all, with a lower rate limit. A wrong key is refused.
+ */
 export async function GET(req: Request) {
   try {
+    const sentKey = Boolean(req.headers.get("x-api-key")?.trim());
     const caller = await getCaller(req);
-    if (!caller) return unauthorized();
-    if (caller.kind === "app") {
-      const limited = rateLimit(req, "stock-recap:get", 120);
-      if (limited) return limited;
-    } else {
+    if (!caller && sentKey) return unauthorized();
+    if (caller?.kind === "session") {
       const user = await getSessionUser(caller.clerkId);
       if (!user?.verified) return forbidden("Compte non validé");
+    } else {
+      const limited = rateLimit(req, caller ? "stock-recap:get" : "stock-recap:get:anonymous", caller ? 120 : 30);
+      if (limited) return limited;
     }
 
     const site = new URL(req.url).searchParams.get("site") || "";

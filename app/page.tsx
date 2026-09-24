@@ -44,8 +44,8 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
 
   const user = await ensureUser(userId);
   if (!user || !user.verified) {
-    const profile = await getClerkProfile();
-    return <PendingApproval email={profile?.email || user?.email || ""} role={user?.role} />;
+    const profile = user?.email ? null : await getClerkProfile().catch(() => null);
+    return <PendingApproval email={user?.email || profile?.email || ""} role={user?.role} />;
   }
 
   const params = await searchParams;

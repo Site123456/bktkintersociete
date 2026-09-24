@@ -23,7 +23,7 @@ export type DeliveryDraft = {
 
 export type StockDraft = {
   v: 1;
-  /** Month the sheet is for (YYYY-MM): a draft of another month is ignored. */
+  /** Month the sheet was started in (YYYY-MM): a draft of another month is kept only while it has lines. */
   month: string;
   /** true once the lines were prefilled with the month's orders or edited by hand. */
   seeded: boolean;
@@ -41,6 +41,20 @@ export function newLineId(): string {
   counter += 1;
   const rnd = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID().slice(0, 8) : "";
   return `l${Date.now().toString(36)}${counter.toString(36)}${rnd}`;
+}
+
+/**
+ * Id of one sending attempt (POST /api/documents "requestId", 8-40 chars of [A-Za-z0-9_-]): a retry with the same id
+ * returns the document already created instead of a second one. Called from event handlers only.
+ */
+export function newRequestId(): string {
+  const c = typeof crypto !== "undefined" ? crypto : undefined;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  // randomUUID needs a secure context (https): 24 random base-36 characters instead.
+  const bytes = new Uint8Array(24);
+  if (c && typeof c.getRandomValues === "function") c.getRandomValues(bytes);
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  return Array.from(bytes, (b) => (b % 36).toString(36)).join("");
 }
 
 /** Lines received from the server, with stable ids (no randomness: safe during render). */
@@ -73,12 +87,7 @@ function isSource(v: unknown): v is SourceDoc | null {
 
 export function isDeliveryDraft(v: unknown): v is DeliveryDraft {
   return (
-    isObject(v) &&
-    v.v === 1 &&
-    typeof v.date === "string" &&
-    typeof v.note === "string" &&
-    isLines(v.lines) &&
-    isSource(v.from)
+    isObject(v) && v.v === 1 && typeof v.date === "string" && typeof v.note === "string" && isLines(v.lines) && isSource(v.from)
   );
 }
 
@@ -94,8 +103,11 @@ export function isStockDraft(v: unknown): v is StockDraft {
 }
 
 /** Lines that will be sent (quantity above zero), without the local ids. */
-export function linesToSend(lines: BuilderLine[]): DeliveryLine[] {
-  return lines.filter((l) => l.name.trim() && l.qty > 0).map(({ name, unit, qty }) => ({ name, unit, qty }));
+/** Lines for the server. Zero lines are dropped, except on a stock sheet (keepZero): 0 = out of stock. */
+export function linesToSend(lines: BuilderLine[], keepZero = false): DeliveryLine[] {
+  return lines
+    .filter((l) => l.name.trim() && (keepZero ? l.qty >= 0 : l.qty > 0))
+    .map(({ name, unit, qty }) => ({ name, unit, qty }));
 }
 
 export type Totals = { articles: number; quantity: number; zero: number };
@@ -118,11 +130,32 @@ export const plural = (n: number, one: string, many = `${one}s`) => (n > 1 ? man
 /** "3 articles" */
 export const countLabel = (n: number, word = "article") => `${n} ${plural(n, word)}`;
 
-/** "2026-09-25" → "jeu. 25 sept." */
-export function formatDateShort(ymd: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd;
+/** "2026-09-25" → "vendredi" */
+export function weekdayOf(ymd: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
   const d = new Date(`${ymd}T12:00:00Z`);
-  return new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(d);
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "long", timeZone: "UTC" }).format(d);
+}
+
+/** Whole days from `from` to `to` (both YYYY-MM-DD). */
+function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
+}
+
+/** Relative to today: "aujourd’hui", "demain", "après-demain", "dans 5 jours" ("" for a past or invalid date). */
+export function relativeDay(ymd: string, today: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd) || !/^\d{4}-\d{2}-\d{2}$/.test(today)) return "";
+  const n = daysBetween(today, ymd);
+  if (n < 0 || !Number.isFinite(n)) return "";
+  if (n === 0) return "aujourd’hui";
+  if (n === 1) return "demain";
+  if (n === 2) return "après-demain";
+  return `dans ${n} jours`;
+}
+
+/** "Vendredi · demain" (weekday + relative day), shown next to a JJ/MM/AAAA date. */
+export function dayContext(ymd: string, today: string): string {
+  return [capitalize(weekdayOf(ymd)), relativeDay(ymd, today)].filter(Boolean).join(" · ");
 }
 
 /** "2026-09-24" → "septembre 2026" */
@@ -157,7 +190,13 @@ export function parseFrequent(value: unknown): { name: string; unit: string; cou
   if (!Array.isArray(value)) return [];
   return value.flatMap((it) =>
     isObject(it) && typeof it.name === "string" && it.name.trim()
-      ? [{ name: it.name, unit: typeof it.unit === "string" ? it.unit : "", count: typeof it.count === "number" ? it.count : undefined }]
+      ? [
+          {
+            name: it.name,
+            unit: typeof it.unit === "string" ? it.unit : "",
+            count: typeof it.count === "number" ? it.count : undefined,
+          },
+        ]
       : [],
   );
 }

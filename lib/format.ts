@@ -71,6 +71,8 @@ export function formatDateLong(ymd: string | null | undefined): string {
 
 /** Date (Paris) as YYYY-MM-DD, `offsetDays` from today. */
 export function ymdParis(offsetDays = 0): string {
-  const d = new Date(Date.now() + offsetDays * 86_400_000);
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(d);
+  // Today's date in Paris, then whole calendar days (adding 24 h is wrong on daylight-saving days).
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+  const t = Date.parse(`${today}T12:00:00Z`) + offsetDays * 86_400_000;
+  return new Date(t).toISOString().slice(0, 10);
 }

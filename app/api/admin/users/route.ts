@@ -42,7 +42,8 @@ export async function PATCH(req: Request) {
 
     const body = await readBody(req, patchSchema);
     if ("error" in body) return body.error;
-    const { id, verified, role } = body.data;
+    const { verified, role } = body.data;
+    const id = body.data.id.toLowerCase();
     const site = body.data.site === null ? "" : body.data.site;
 
     // An admin cannot lock themselves out.

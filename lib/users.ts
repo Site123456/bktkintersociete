@@ -12,7 +12,15 @@ import type { SiteOption } from "@/types/delivery";
 export async function ensureUser(clerkId: string): Promise<UserDoc | null> {
   await connectDB();
   const existing = await User.findOne({ clerkId }).lean<UserDoc>();
-  const profile = await getClerkProfile();
+  // Clerk is asked only when the record is new or incomplete (not on every page load), and a Clerk
+  // outage never blocks the page.
+  if (existing?.email && existing.name) return existing;
+  let profile: Awaited<ReturnType<typeof getClerkProfile>> = null;
+  try {
+    profile = await getClerkProfile();
+  } catch {
+    return existing;
+  }
   if (!profile) return existing;
   const changes: Partial<UserDoc> = {};
   if (profile.email && profile.email !== existing?.email) changes.email = profile.email;

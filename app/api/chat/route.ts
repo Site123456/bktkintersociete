@@ -3,7 +3,7 @@ import { z } from "zod";
 import connectDB from "@/lib/connectDB";
 import { getCaller, getSessionUser } from "@/lib/auth";
 import { badRequest, forbidden, json, rateLimit, readBody, serverError, unauthorized } from "@/lib/http";
-import { Message, User, type UserDoc } from "@/lib/models";
+import { Message, User, syncChatRetention, type UserDoc } from "@/lib/models";
 
 /*
  * Team chat (per site, or "global"). Mobile app (x-api-key) or validated website users.
@@ -60,6 +60,7 @@ export async function GET(req: Request) {
     }
 
     await connectDB();
+    void syncChatRetention();
     const rows = await MessageModel.find(filter, FIELDS).sort({ createdAt: -1 }).limit(limit).lean();
     return json({ ok: true, messages: rows.reverse().map(view) });
   } catch (err) {
@@ -76,7 +77,8 @@ const postSchema = z.object({
     // Keep line breaks, remove other control characters.
     .transform((s) => s.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, " ").trim())
     .pipe(z.string().min(1, "Message vide").max(2000, "Message trop long")),
-  site: z.string().regex(ROOM_RE).nullish(),
+  // "" (sent by the app for the general room) falls back to "global" below, as before.
+  site: z.union([z.literal(""), z.string().regex(ROOM_RE)]).nullish(),
 });
 
 const cleanName = (s: string | null | undefined) =>
@@ -101,6 +103,7 @@ export async function POST(req: Request) {
     if (!authorId) return badRequest("Missing required fields");
 
     await connectDB();
+    void syncChatRetention();
     const author = await User.findOne({ clerkId: authorId }, { clerkId: 1, name: 1, verified: 1, _id: 0 }).lean<
       Pick<UserDoc, "clerkId" | "name" | "verified">
     >();

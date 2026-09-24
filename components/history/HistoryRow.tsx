@@ -37,7 +37,7 @@ export function HistoryRow({ doc, query = "", onOpen }: HistoryRowProps) {
   return (
     <li
       className={cn(
-        "relative flex items-center gap-2 py-3 pr-2 pl-4 transition-colors hover:bg-accent/40 sm:gap-4 sm:py-3.5 sm:pr-3",
+        "relative -mx-2 flex items-center gap-2 px-2 py-3 transition-colors hover:bg-accent/60 sm:gap-4 sm:py-3.5",
         "has-[[data-row-open]:focus-visible]:ring-2 has-[[data-row-open]:focus-visible]:ring-ring has-[[data-row-open]:focus-visible]:ring-inset",
       )}
     >
@@ -105,7 +105,7 @@ export function HistoryRow({ doc, query = "", onOpen }: HistoryRowProps) {
           </a>
         </Button>
         {isBl ? (
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="ghost" size="sm" className="text-foreground hover:text-foreground">
             <Link href={reorderUrl(doc.id)} prefetch={false} aria-label={`Recommander ${doc.number}`}>
               <RotateCcw aria-hidden />
               Recommander

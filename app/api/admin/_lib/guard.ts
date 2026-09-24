@@ -1,7 +1,7 @@
 import "server-only";
 import type { NextResponse } from "next/server";
 import { requireVerifiedSession } from "@/lib/auth";
-import { forbidden, rateLimit, unauthorized } from "@/lib/http";
+import { forbidden, isCrossSiteWrite, rateLimit, unauthorized } from "@/lib/http";
 import type { UserDoc } from "@/lib/models";
 
 /*
@@ -11,22 +11,10 @@ import type { UserDoc } from "@/lib/models";
 
 type Guard = { ok: true; user: UserDoc } | { ok: false; response: NextResponse };
 
-/** Changes must come from this website (the session cookie is SameSite=Lax; this is a second check). */
-function sameOrigin(req: Request): boolean {
-  const origin = req.headers.get("origin");
-  if (!origin) return true;
-  const host = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").split(",")[0].trim();
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
-
 export async function adminGuard(req: Request, route: string): Promise<Guard> {
   const limited = rateLimit(req, `admin:${route}`, 60, 60_000);
   if (limited) return { ok: false, response: limited };
-  if (req.method !== "GET" && !sameOrigin(req)) return { ok: false, response: forbidden() };
+  if (isCrossSiteWrite(req)) return { ok: false, response: forbidden() };
 
   const gate = await requireVerifiedSession(["admin"]);
   if (!gate.ok) return { ok: false, response: gate.status === 401 ? unauthorized() : forbidden(gate.error) };

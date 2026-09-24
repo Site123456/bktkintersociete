@@ -1,4 +1,5 @@
 import "server-only";
+import { isCrossSiteWrite } from "@/lib/http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import connectDB from "@/lib/connectDB";
@@ -29,6 +30,8 @@ export async function getCaller(req: Request): Promise<Caller | null> {
   // An empty header (a page built without a key) is treated as no key: the Clerk session decides.
   const key = req.headers.get("x-api-key")?.trim();
   if (key) return isValidApiKey(key) ? { kind: "app" } : null;
+  // A signed-in browser session is never accepted for a change coming from another site.
+  if (isCrossSiteWrite(req)) return null;
   try {
     const { userId } = await auth();
     return userId ? { kind: "session", clerkId: userId } : null;
@@ -47,8 +50,12 @@ export type SessionGate =
   | { ok: true; clerkId: string; user: UserDoc }
   | { ok: false; status: 401 | 403; error: string };
 
-/** Signed-in, validated by an admin, and optionally with one of the given roles. */
-export async function requireVerifiedSession(roles?: Role[]): Promise<SessionGate> {
+/**
+ * Signed-in, validated by an admin, and optionally with one of the given roles. Route handlers pass
+ * `req` so that changes sent from another site are refused.
+ */
+export async function requireVerifiedSession(roles?: Role[], req?: Request): Promise<SessionGate> {
+  if (req && isCrossSiteWrite(req)) return { ok: false, status: 403, error: "Requête refusée" };
   let userId: string | null = null;
   try {
     userId = (await auth()).userId;

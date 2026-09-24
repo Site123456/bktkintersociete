@@ -1,6 +1,6 @@
 import { z } from "zod";
 import connectDB from "@/lib/connectDB";
-import { isBuiltIn } from "@/lib/catalog";
+import { findCustomNamed, isBuiltIn } from "@/lib/catalog";
 import { normalizeKey } from "@/lib/format";
 import { badRequest, json, readBody, serverError } from "@/lib/http";
 import { CustomProduct } from "@/lib/models";
@@ -59,9 +59,7 @@ export async function PATCH(req: Request) {
       if (normalizeKey(name) !== normalizeKey(current.uniquename) && isBuiltIn(name)) {
         return badRequest(`« ${name} » fait déjà partie du catalogue de l’application.`);
       }
-      const other = await CustomProduct.findOne({ uniquename: name, _id: { $ne: current._id } }, { uniquename: 1 })
-        .collation({ locale: "fr", strength: 1 })
-        .lean<Pick<ProductRow, "_id" | "uniquename">>();
+      const other = await findCustomNamed(name, String(current._id));
       if (other) return duplicate(other.uniquename);
       $set.uniquename = name;
     }

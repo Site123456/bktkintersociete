@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * layout so nothing jumps when the content arrives. Server-safe, no Clerk, no data.
  */
 
-type Variant = "builder" | "list" | "document" | "admin";
+type Variant = "builder" | "list" | "admin";
 
 function HeaderSkeleton() {
   return (
@@ -72,48 +72,6 @@ function Body({ variant }: { variant: Variant }) {
         </div>
         <Rows count={4} />
         <Skeleton className="h-12 w-full rounded-xl" />
-      </div>
-    );
-  }
-  if (variant === "document") {
-    return (
-      <div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex flex-wrap justify-end gap-2">
-          <Skeleton className="h-10 w-32 rounded-md" />
-          <Skeleton className="h-10 w-32 rounded-md" />
-        </div>
-        <div className="space-y-6 rounded-2xl border bg-card p-5 sm:p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="size-11 rounded-md" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-3 w-52" />
-              </div>
-            </div>
-            <div className="hidden space-y-2 sm:block">
-              <Skeleton className="ml-auto h-6 w-48" />
-              <Skeleton className="ml-auto h-4 w-36" />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-4">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-5 w-28" />
-              </div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="flex items-center gap-4 border-b pb-3 last:border-0">
-                <Skeleton className="h-3 w-5" />
-                <Skeleton className="h-4 flex-1" style={{ maxWidth: `${40 + ((i * 13) % 40)}%` }} />
-                <Skeleton className="ml-auto h-4 w-10" />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     );
   }

@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 
-const TYPING = "input, textarea, select, [contenteditable=''], [contenteditable='true'], [role='dialog'], [role='alertdialog'], [role='menu']";
+const TYPING =
+  "input, textarea, select, [contenteditable=''], [contenteditable='true'], [role='dialog'], [role='alertdialog'], [role='menu']";
 
 /** "/" focuses the field with this id, unless the person is typing somewhere or a dialog is open. */
 export function useSlashFocus(inputId: string) {

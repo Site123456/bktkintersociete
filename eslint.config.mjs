@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Static files (minified third-party code).
+    "public/**",
   ]),
 ]);
 
