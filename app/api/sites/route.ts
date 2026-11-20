@@ -42,6 +42,37 @@ const view = (r: SiteRow) => {
 
 const FIELDS = { slug: 1, name: 1, line1: 1, line2: 1, active: 1 } as const;
 
+let defaultSitesSynced: Promise<void> | null = null;
+
+const isOnlyDuplicateKey = (err: unknown): boolean => {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { code?: unknown; writeErrors?: { code?: unknown }[] };
+  if (Array.isArray(e.writeErrors) && e.writeErrors.length > 0) {
+    return e.writeErrors.every((w) => w.code === 11000);
+  }
+  return e.code === 11000;
+};
+
+/** Ensure every built-in site exists in MongoDB without overwriting admin edits or inactive flags. */
+function syncDefaultSites(): Promise<void> {
+  defaultSitesSynced ??= Site.bulkWrite(
+    DEFAULT_SITES.map((s) => ({
+      updateOne: {
+        filter: { slug: s.slug },
+        update: { $setOnInsert: { slug: s.slug, name: s.shortName, line1: s.line1, line2: s.line2, active: true } },
+        upsert: true,
+      },
+    })),
+    { ordered: false },
+  )
+    .then(() => undefined)
+    .catch((err) => {
+      defaultSitesSynced = null;
+      if (!isOnlyDuplicateKey(err)) throw err;
+    });
+  return defaultSitesSynced;
+}
+
 export async function GET(req: Request) {
   try {
     const caller = await getCaller(req);
@@ -52,19 +83,7 @@ export async function GET(req: Request) {
     }
 
     await connectDB();
-    // First use: store the built-in list (idempotent, safe if two requests race).
-    if ((await Site.estimatedDocumentCount()) === 0) {
-      await Site.bulkWrite(
-        DEFAULT_SITES.map((s) => ({
-          updateOne: {
-            filter: { slug: s.slug },
-            update: { $setOnInsert: { slug: s.slug, name: s.shortName, line1: s.line1, line2: s.line2, active: true } },
-            upsert: true,
-          },
-        })),
-        { ordered: false },
-      );
-    }
+    await syncDefaultSites();
 
     const rows = await Site.find({ active: { $ne: false } }, FIELDS).sort({ slug: 1 }).lean<SiteRow[]>();
     return json({ ok: true, sites: rows.map(view) });

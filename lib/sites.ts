@@ -15,6 +15,7 @@ export const DEFAULT_SITES: SiteInfo[] = [
   { slug: "BKTK06", shortName: "INS Ivry", name: "INDIAN NEPALI SWAD IVRY", line1: "11 Rue Moïse", line2: "94200 Ivry-sur-Seine, France" },
   { slug: "BKTK07", shortName: "INS Aubervilliers", name: "INDIAN NEPALI SWAD AUBERVILLIERS", line1: "79 Rue du Landy", line2: "93300 Aubervilliers, France" },
   { slug: "BKTK08", shortName: "Koseli Buffet", name: "KOSELI BUFFET", line1: "197 Avenue Paul Vaillant Couturier", line2: "93120 La Courneuve, France" },
+  { slug: "BKTK09", shortName: "INS Paris 16", name: "INDIAN NEPALI SWAD PARIS 16", line1: "14 Rue Copernic", line2: "75116 Paris, France" },
 ];
 
 /** Legacy export (name → address block) kept for older imports. */
